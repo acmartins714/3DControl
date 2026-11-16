@@ -157,6 +157,7 @@ Cada feature é dividida em três camadas, com a **regra da dependência** apont
 | **PostgreSQL** + **Flyway** | Banco relacional robusto e gratuito. O Flyway versiona o esquema (`db/migration/V1__*.sql`), e o Hibernate apenas **valida** (`ddl-auto: validate`) |
 | **UUID** gerado no domínio | A identidade nasce no domínio, sem depender do banco; IDs não colidem entre serviços |
 | **Controle otimista** (`@Version`) em `Pedido` e `ItemEstoque` | Impede a corrida "atendente altera enquanto a produção inicia" e duas reservas simultâneas do mesmo saldo (HTTP 409) |
+| **Timeouts nos clientes HTTP** (`spring.http.clients`: conexão 2 s, leitura 10 s) | Quando um serviço cai, quem o chama falha rápido (503) em vez de ficar preso no timeout do sistema operacional |
 | **Problem Details (RFC 9457)** | Erros padronizados: 404 (não encontrado), 422 (regra de negócio), 409 (concorrência), 503 (serviço dependente indisponível) |
 | **Sem módulo "common" compartilhado** | Microsserviços não compartilham código de domínio. As poucas classes utilitárias (`DomainException`, handler) são duplicadas de propósito para manter a autonomia de cada serviço |
 | **Snapshot de preço/custo no item do pedido** | Mudanças futuras no catálogo não alteram pedidos já fechados nem distorcem a análise de lucro |
@@ -378,6 +379,30 @@ Os testes cobrem as regras de domínio (Regra de Ouro, transições de status, b
 quitação, reserva de insumos, priorização da fila, pagamentos e lucratividade) **sem depender de banco
 ou de Spring**.
 
+### Testes ponta a ponta (com o ambiente Docker no ar)
+
+Scripts em [`scripts/e2e/`](scripts/e2e). Usam só a biblioteca padrão do Python 3, chamam a API pelo
+gateway e podem ser executados várias vezes, porque cada execução cria dados próprios.
+
+**Fluxo completo do pedido** (35 verificações): falta de insumo → solicitação de compra → reprocessamento
+→ alteração antes da produção → Regra de Ouro → baixa de estoque → entrega bloqueada até a quitação →
+rastreio → lucratividade → erros padronizados.
+
+```bash
+python scripts/e2e/fluxo_completo.py
+```
+
+**Compensação da saga:** com o `financeiro-service` fora do ar, o registro do pedido deve responder 503
+sem gravar o pedido, devolvendo a reserva de estoque e cancelando a ordem de produção.
+
+```bash
+docker compose stop financeiro-service
+python scripts/e2e/compensacao.py
+docker compose start financeiro-service
+```
+
+Para apontar para outro endereço, defina `API_BASE_URL` (padrão: `http://localhost:8080/api`).
+
 ---
 
 ## 9. Endpoints
@@ -423,3 +448,5 @@ Endpoints de **integração interna** (chamados entre serviços): `POST /estoque
 - **Observabilidade:** Actuator, *tracing* distribuído (Micrometer + OpenTelemetry) e *circuit breaker*
   (Resilience4j) nos clientes HTTP.
 - **Testes de integração** com Testcontainers (PostgreSQL) para os adaptadores de persistência.
+- **Erros do gateway:** quando o serviço de destino está fora do ar, o `api-gateway` responde 500 (falha
+  rápida, mas com o código genérico). O ideal é 503, com um filtro de *circuit breaker* e *fallback*.

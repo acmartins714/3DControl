@@ -1,13 +1,17 @@
 # Diagrama de Classes UML — 3D Control
 
-Modelo de domínio de cada microsserviço (camada `domain`), com os casos de uso e portas principais.
+Modelo de domínio de cada microsserviço (camada `domain`) e, em seguida, os componentes Spring de cada
+serviço com as **anotações** que cada classe usa (indicadas no estereótipo `«…»`).
 As setas tracejadas entre serviços representam **referências apenas por identificador** (UUID): cada serviço
 tem o próprio banco e não há chave estrangeira entre bancos.
 
-> Fonte PlantUML equivalente: [`diagrama-classes.puml`](diagrama-classes.puml)
+> Fonte PlantUML equivalente (2 diagramas: domínio e camadas do `pedido-service` com anotações):
+> [`diagrama-classes.puml`](diagrama-classes.puml)
 > (abra no plugin PlantUML do IntelliJ/VS Code ou em https://www.plantuml.com/plantuml para exportar PNG/SVG).
 
-## Visão geral (todos os contextos)
+## Visão geral do domínio (todos os contextos)
+
+Classes de domínio: Java puro, **sem anotações** de Spring ou JPA.
 
 ```mermaid
 classDiagram
@@ -231,28 +235,52 @@ classDiagram
     ContaReceber ..> Pedido : pedidoId
 ```
 
-## pedido-service — camadas (Arquitetura Limpa)
+## pedido-service — camadas e anotações Spring
 
-Exemplo de como cada feature se organiza: o caso de uso depende apenas de **portas** (interfaces);
-os **adaptadores** da infraestrutura as implementam.
+Cada classe mostra no estereótipo `«…»` as anotações que leva no código. As classes de domínio
+(`Pedido`, `ItemPedido`…) **não têm anotações**: são Java puro. Os casos de uso dependem apenas das
+**portas** (interfaces), e os adaptadores da infraestrutura as implementam.
 
 ```mermaid
 classDiagram
     direction TB
 
-    class PedidoController {
-        <<infrastructure.web>>
+    class PedidoServiceApplication {
+        <<@SpringBootApplication>>
+        +main(String[] args)$
     }
+
+    %% ---------- infrastructure.web ----------
+    class PedidoController {
+        <<@RestController @RequestMapping /pedidos>>
+        +registrar(@Valid @RequestBody NovoPedidoRequest) PedidoResponse
+        +alterar(@PathVariable UUID, @Valid @RequestBody AlteracaoRequest) PedidoResponse
+        +confirmarEntrega(@PathVariable UUID) PedidoResponse
+        +cancelar(@PathVariable UUID, @RequestBody CancelamentoRequest) PedidoResponse
+    }
+    class RastreioController {
+        <<@RestController @RequestMapping /rastreio>>
+        +rastrear(@PathVariable String codigo) Rastreio
+    }
+    class GlobalExceptionHandler {
+        <<@RestControllerAdvice>>
+        +naoEncontrado() ProblemDetail 404
+        +regraDeNegocio() ProblemDetail 422
+        +concorrencia() ProblemDetail 409
+        +integracao() ProblemDetail 503
+    }
+
+    %% ---------- application ----------
     class RegistrarPedidoUseCase {
-        <<application>>
+        <<@Service @Transactional>>
         +executar(NovoPedido cmd) Pedido
     }
     class AlterarPedidoUseCase {
-        <<application>>
+        <<@Service @Transactional>>
         +executar(UUID id, AlteracaoPedido cmd) Pedido
     }
     class MovimentarPedidoUseCase {
-        <<application>>
+        <<@Service @Transactional>>
         +reprocessarInsumos(UUID id) Pedido
         +iniciarProducao(UUID id) Pedido
         +finalizarProducao(UUID id) Pedido
@@ -260,11 +288,27 @@ classDiagram
         +confirmarEntrega(UUID id) Pedido
         +cancelar(UUID id, String motivo) Pedido
     }
-    class Pedido {
-        <<domain>>
+    class ConsultarPedidosUseCase {
+        <<@Service @Transactional(readOnly = true)>>
+        +buscar(UUID id) Pedido
+        +listar(StatusPedido s, UUID clienteId) List~Pedido~
     }
+    class RastrearPedidoUseCase {
+        <<@Service @Transactional(readOnly = true)>>
+        +rastrear(String codigo) Rastreio
+    }
+    class MontadorItensPedido {
+        <<@Component>>
+        +montar(List~ItemCommand~ itens) ItensResolvidos
+        +necessidades(List~ItemPedido~ itens) List~InsumoNecessario~
+    }
+
+    %% ---------- portas (interfaces da aplicação/domínio) ----------
     class PedidoRepository {
         <<interface>>
+        +salvar(Pedido p) Pedido
+        +buscarPorId(UUID id) Optional~Pedido~
+        +buscarPorCodigo(String codigo) Optional~Pedido~
     }
     class CadastroGateway {
         <<interface>>
@@ -278,37 +322,233 @@ classDiagram
     class FinanceiroGateway {
         <<interface>>
     }
-    class PedidoRepositoryAdapter {
-        <<infrastructure.persistence>>
+
+    %% ---------- domain (sem anotações) ----------
+    class Pedido {
+        <<domain — sem anotações>>
     }
+
+    %% ---------- infrastructure.persistence ----------
+    class PedidoRepositoryAdapter {
+        <<@Component>>
+    }
+    class PedidoJpaRepository {
+        <<interface — Spring Data>>
+        extends JpaRepository~PedidoJpa, UUID~
+        +findByCodigo(String codigo) Optional~PedidoJpa~
+    }
+    class PedidoJpa {
+        <<@Entity @Table pedido>>
+        @Id UUID id
+        @Enumerated StatusPedido status
+        @Version Long versao
+        @ElementCollection List~ItemPedidoEmbeddable~ itens
+        @ElementCollection List~HistoricoEmbeddable~ historico
+        +from(Pedido p)$ PedidoJpa
+        +toDomain() Pedido
+    }
+    class ItemPedidoEmbeddable {
+        <<@Embeddable>>
+    }
+    class HistoricoEmbeddable {
+        <<@Embeddable>>
+    }
+
+    %% ---------- infrastructure.client ----------
     class CadastroHttpGateway {
-        <<infrastructure.client>>
+        <<@Component — RestClient>>
     }
     class EstoqueHttpGateway {
-        <<infrastructure.client>>
+        <<@Component — RestClient>>
     }
     class ProducaoHttpGateway {
-        <<infrastructure.client>>
+        <<@Component — RestClient>>
     }
     class FinanceiroHttpGateway {
-        <<infrastructure.client>>
+        <<@Component — RestClient>>
     }
 
     PedidoController --> RegistrarPedidoUseCase
     PedidoController --> AlterarPedidoUseCase
     PedidoController --> MovimentarPedidoUseCase
-    RegistrarPedidoUseCase ..> Pedido
+    PedidoController --> ConsultarPedidosUseCase
+    RastreioController --> RastrearPedidoUseCase
+
+    RegistrarPedidoUseCase --> MontadorItensPedido
+    AlterarPedidoUseCase --> MontadorItensPedido
     RegistrarPedidoUseCase --> PedidoRepository
     RegistrarPedidoUseCase --> CadastroGateway
     RegistrarPedidoUseCase --> EstoqueGateway
     RegistrarPedidoUseCase --> ProducaoGateway
     RegistrarPedidoUseCase --> FinanceiroGateway
+    MovimentarPedidoUseCase --> PedidoRepository
+    RastrearPedidoUseCase --> PedidoRepository
+    MontadorItensPedido --> CadastroGateway
+    RegistrarPedidoUseCase ..> Pedido : cria
+    PedidoRepository ..> Pedido
+
     PedidoRepositoryAdapter ..|> PedidoRepository
+    PedidoRepositoryAdapter --> PedidoJpaRepository
+    PedidoJpaRepository ..> PedidoJpa
+    PedidoJpa *-- ItemPedidoEmbeddable
+    PedidoJpa *-- HistoricoEmbeddable
+    PedidoJpa ..> Pedido : converte
     CadastroHttpGateway ..|> CadastroGateway
     EstoqueHttpGateway ..|> EstoqueGateway
     ProducaoHttpGateway ..|> ProducaoGateway
     FinanceiroHttpGateway ..|> FinanceiroGateway
 ```
+
+## Demais serviços — componentes Spring
+
+Todos seguem o mesmo padrão: `@RestController` → `@Service @Transactional` → porta (`interface`) ←
+adaptador `@Component` → `JpaRepository` → `@Entity`. Cada serviço também tem um
+`@SpringBootApplication` e um `GlobalExceptionHandler` (`@RestControllerAdvice`).
+
+### cadastro-service
+
+```mermaid
+classDiagram
+    direction LR
+    class ClienteController { <<@RestController /clientes>> }
+    class InsumoController { <<@RestController /insumos>> }
+    class ProdutoController { <<@RestController /produtos>> }
+    class GerenciarClientesUseCase { <<@Service @Transactional>> }
+    class GerenciarInsumosUseCase { <<@Service @Transactional>> }
+    class GerenciarProdutosUseCase { <<@Service @Transactional>> }
+    class ClienteRepository { <<interface>> }
+    class InsumoRepository { <<interface>> }
+    class ProdutoRepository { <<interface>> }
+    class ClienteRepositoryAdapter { <<@Component>> }
+    class InsumoRepositoryAdapter { <<@Component>> }
+    class ProdutoRepositoryAdapter { <<@Component>> }
+    class ClienteJpaEntity { <<@Entity @Table cliente>> }
+    class InsumoJpaEntity { <<@Entity @Table insumo>> }
+    class ProdutoJpaEntity { <<@Entity @Table produto>> }
+    class ComposicaoEmbeddable { <<@Embeddable>> }
+
+    ClienteController --> GerenciarClientesUseCase
+    InsumoController --> GerenciarInsumosUseCase
+    ProdutoController --> GerenciarProdutosUseCase
+    GerenciarClientesUseCase --> ClienteRepository
+    GerenciarInsumosUseCase --> InsumoRepository
+    GerenciarProdutosUseCase --> ProdutoRepository
+    GerenciarProdutosUseCase --> InsumoRepository
+    ClienteRepositoryAdapter ..|> ClienteRepository
+    InsumoRepositoryAdapter ..|> InsumoRepository
+    ProdutoRepositoryAdapter ..|> ProdutoRepository
+    ClienteRepositoryAdapter ..> ClienteJpaEntity
+    InsumoRepositoryAdapter ..> InsumoJpaEntity
+    ProdutoRepositoryAdapter ..> ProdutoJpaEntity
+    ProdutoJpaEntity *-- ComposicaoEmbeddable : @ElementCollection
+```
+
+### estoque-service
+
+```mermaid
+classDiagram
+    direction LR
+    class EstoqueController { <<@RestController /estoque>> }
+    class SolicitacaoCompraController { <<@RestController /solicitacoes-compra>> }
+    class GerenciarEstoqueUseCase { <<@Service @Transactional>> }
+    class ReservarInsumosUseCase { <<@Service @Transactional>> }
+    class GerenciarSolicitacoesCompraUseCase { <<@Service @Transactional>> }
+    class ItemEstoqueRepository { <<interface>> }
+    class ReservaRepository { <<interface>> }
+    class MovimentacaoRepository { <<interface>> }
+    class SolicitacaoCompraRepository { <<interface>> }
+    class ItemEstoqueRepositoryAdapter { <<@Component>> }
+    class ReservaRepositoryAdapter { <<@Component>> }
+    class MovimentacaoRepositoryAdapter { <<@Component>> }
+    class SolicitacaoCompraRepositoryAdapter { <<@Component>> }
+    class ItemEstoqueJpa { <<@Entity @Table item_estoque — @Version>> }
+    class ReservaJpa { <<@Entity @Table reserva>> }
+    class MovimentacaoJpa { <<@Entity @Table movimentacao_estoque>> }
+    class SolicitacaoCompraJpa { <<@Entity @Table solicitacao_compra>> }
+
+    EstoqueController --> GerenciarEstoqueUseCase
+    EstoqueController --> ReservarInsumosUseCase
+    SolicitacaoCompraController --> GerenciarSolicitacoesCompraUseCase
+    GerenciarSolicitacoesCompraUseCase --> GerenciarEstoqueUseCase
+    GerenciarEstoqueUseCase --> ItemEstoqueRepository
+    GerenciarEstoqueUseCase --> MovimentacaoRepository
+    ReservarInsumosUseCase --> ItemEstoqueRepository
+    ReservarInsumosUseCase --> ReservaRepository
+    ReservarInsumosUseCase --> MovimentacaoRepository
+    ReservarInsumosUseCase --> SolicitacaoCompraRepository
+    GerenciarSolicitacoesCompraUseCase --> SolicitacaoCompraRepository
+    ItemEstoqueRepositoryAdapter ..|> ItemEstoqueRepository
+    ReservaRepositoryAdapter ..|> ReservaRepository
+    MovimentacaoRepositoryAdapter ..|> MovimentacaoRepository
+    SolicitacaoCompraRepositoryAdapter ..|> SolicitacaoCompraRepository
+    ItemEstoqueRepositoryAdapter ..> ItemEstoqueJpa
+    ReservaRepositoryAdapter ..> ReservaJpa
+    MovimentacaoRepositoryAdapter ..> MovimentacaoJpa
+    SolicitacaoCompraRepositoryAdapter ..> SolicitacaoCompraJpa
+```
+
+### producao-service
+
+```mermaid
+classDiagram
+    direction LR
+    class OrdemProducaoController { <<@RestController /producao>> }
+    class PlanejarProducaoUseCase { <<@Service @Transactional>> }
+    class ExecutarProducaoUseCase { <<@Service @Transactional>> }
+    class OrdemProducaoConfig { <<@Configuration — @Bean Clock>> }
+    class OrdemProducaoRepository { <<interface>> }
+    class PedidoGateway { <<interface>> }
+    class OrdemProducaoRepositoryAdapter { <<@Component>> }
+    class PedidoHttpGateway { <<@Component — RestClient>> }
+    class OrdemProducaoJpa { <<@Entity @Table ordem_producao>> }
+
+    OrdemProducaoController --> PlanejarProducaoUseCase
+    OrdemProducaoController --> ExecutarProducaoUseCase
+    PlanejarProducaoUseCase --> OrdemProducaoRepository
+    PlanejarProducaoUseCase ..> OrdemProducaoConfig : Clock
+    ExecutarProducaoUseCase --> OrdemProducaoRepository
+    ExecutarProducaoUseCase --> PedidoGateway
+    OrdemProducaoRepositoryAdapter ..|> OrdemProducaoRepository
+    OrdemProducaoRepositoryAdapter ..> OrdemProducaoJpa
+    PedidoHttpGateway ..|> PedidoGateway
+```
+
+### financeiro-service
+
+```mermaid
+classDiagram
+    direction LR
+    class ContaReceberController { <<@RestController /financeiro/contas>> }
+    class LucratividadeController { <<@RestController /financeiro/lucratividade>> }
+    class GerenciarContasReceberUseCase { <<@Service @Transactional>> }
+    class AnalisarLucratividadeUseCase { <<@Service @Transactional(readOnly = true)>> }
+    class ContaReceberRepository { <<interface>> }
+    class ContaReceberRepositoryAdapter { <<@Component>> }
+    class ContaReceberJpa { <<@Entity @Table conta_receber>> }
+    class ItemContaEmbeddable { <<@Embeddable>> }
+    class PagamentoEmbeddable { <<@Embeddable>> }
+
+    ContaReceberController --> GerenciarContasReceberUseCase
+    LucratividadeController --> AnalisarLucratividadeUseCase
+    GerenciarContasReceberUseCase --> ContaReceberRepository
+    AnalisarLucratividadeUseCase --> ContaReceberRepository
+    ContaReceberRepositoryAdapter ..|> ContaReceberRepository
+    ContaReceberRepositoryAdapter ..> ContaReceberJpa
+    ContaReceberJpa *-- ItemContaEmbeddable : @ElementCollection
+    ContaReceberJpa *-- PagamentoEmbeddable : @ElementCollection
+```
+
+### Resumo das anotações por camada
+
+| Camada | Anotações usadas | Exemplos |
+|---|---|---|
+| raiz do serviço | `@SpringBootApplication` | `PedidoServiceApplication` |
+| `infrastructure.web` | `@RestController`, `@RequestMapping`, `@GetMapping`/`@PostMapping`/…, `@Valid`, `@RequestBody`, `@PathVariable`, `@RestControllerAdvice`, `@ExceptionHandler` | `PedidoController`, `GlobalExceptionHandler` |
+| `application` | `@Service`, `@Transactional`, `@Transactional(readOnly = true)`, `@Component` | `RegistrarPedidoUseCase`, `MontadorItensPedido` |
+| `infrastructure.persistence` | `@Component`, `@Entity`, `@Table`, `@Id`, `@Column`, `@Enumerated`, `@Version`, `@ElementCollection`, `@CollectionTable`, `@Embeddable` | `PedidoJpa`, `PedidoRepositoryAdapter` |
+| `infrastructure.client` | `@Component`, `@Value` | `EstoqueHttpGateway` |
+| `infrastructure.config` | `@Configuration`, `@Bean` | `OrdemProducaoConfig` (relógio) |
+| `domain` | **nenhuma** (Java puro) | `Pedido`, `ContaReceber`, `ItemEstoque` |
 
 ## Máquina de estados do Pedido
 

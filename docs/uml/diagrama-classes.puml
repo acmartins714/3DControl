@@ -1,6 +1,7 @@
 @startuml diagrama-classes
 !pragma layout smetana
 title 3D Control — Diagrama de Classes (modelo de domínio por microsserviço)
+Domínio em Java puro; anotações Spring indicadas nos estereótipos
 
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
@@ -161,10 +162,10 @@ package "pedido-service" as PED #FFF6E5 {
   interface ProducaoGateway <<port>>
   interface FinanceiroGateway <<port>>
 
-  class RegistrarPedidoUseCase <<use case>>
-  class AlterarPedidoUseCase <<use case>>
-  class MovimentarPedidoUseCase <<use case>>
-  class RastrearPedidoUseCase <<use case>>
+  class RegistrarPedidoUseCase <<@Service>> <<@Transactional>>
+  class AlterarPedidoUseCase <<@Service>> <<@Transactional>>
+  class MovimentarPedidoUseCase <<@Service>> <<@Transactional>>
+  class RastrearPedidoUseCase <<@Service>> <<@Transactional(readOnly = true)>>
 
   Pedido *-- "1..*" ItemPedido
   Pedido *-- "1..*" HistoricoStatus : linha do tempo
@@ -231,7 +232,7 @@ package "estoque-service" as EST #EAF7EA {
     + cancelar() : void
   }
 
-  class ReservarInsumosUseCase <<use case>> {
+  class ReservarInsumosUseCase <<@Service>> <<@Transactional>> {
     + reservar(pedidoId, necessidades) : ResultadoReserva
     + consumir(pedidoId) : void
     + liberar(pedidoId) : void
@@ -357,4 +358,127 @@ note bottom of Pedido
   confirmarEntrega() exige pagamento quitado.
 end note
 
+@enduml
+
+@startuml camadas-pedido-service
+!pragma layout smetana
+title pedido-service — camadas da Arquitetura Limpa e anotações Spring
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+class PedidoServiceApplication <<@SpringBootApplication>>
+
+package "infrastructure.web" #EEF4FF {
+  class PedidoController <<@RestController>> <<@RequestMapping("/pedidos")>> {
+    + registrar(@Valid @RequestBody NovoPedidoRequest) : PedidoResponse
+    + alterar(@PathVariable UUID, @Valid @RequestBody AlteracaoRequest) : PedidoResponse
+    + confirmarEntrega(@PathVariable UUID) : PedidoResponse
+    + cancelar(@PathVariable UUID, @RequestBody CancelamentoRequest) : PedidoResponse
+  }
+  class RastreioController <<@RestController>> <<@RequestMapping("/rastreio")>> {
+    + rastrear(@PathVariable String codigo) : Rastreio
+  }
+  class GlobalExceptionHandler <<@RestControllerAdvice>> {
+    + naoEncontrado() : ProblemDetail → HTTP 404
+    + regraDeNegocio() : ProblemDetail → HTTP 422
+    + concorrencia() : ProblemDetail → HTTP 409
+    + integracao() : ProblemDetail → HTTP 503
+  }
+}
+
+package "application" #FFF6E5 {
+  class RegistrarPedidoUseCase <<@Service>> <<@Transactional>> {
+    + executar(NovoPedido) : Pedido
+  }
+  class AlterarPedidoUseCase <<@Service>> <<@Transactional>> {
+    + executar(UUID, AlteracaoPedido) : Pedido
+  }
+  class MovimentarPedidoUseCase <<@Service>> <<@Transactional>> {
+    + reprocessarInsumos(UUID) : Pedido
+    + iniciarProducao(UUID) : Pedido
+    + finalizarProducao(UUID) : Pedido
+    + despachar(UUID) : Pedido
+    + confirmarEntrega(UUID) : Pedido
+    + cancelar(UUID, String) : Pedido
+  }
+  class ConsultarPedidosUseCase <<@Service>> <<@Transactional(readOnly = true)>>
+  class RastrearPedidoUseCase <<@Service>> <<@Transactional(readOnly = true)>>
+  class MontadorItensPedido <<@Component>>
+
+  interface CadastroGateway <<port>>
+  interface EstoqueGateway <<port>>
+  interface ProducaoGateway <<port>>
+  interface FinanceiroGateway <<port>>
+}
+
+package "domain (sem anotações)" #EAF7EA {
+  class Pedido <<aggregate root>>
+  interface PedidoRepository <<port>>
+}
+
+package "infrastructure.persistence" #F3ECFA {
+  class PedidoRepositoryAdapter <<@Component>>
+  interface PedidoJpaRepository <<Spring Data>> {
+    + findByCodigo(String) : Optional<PedidoJpa>
+  }
+  class PedidoJpa <<@Entity>> <<@Table("pedido")>> {
+    @Id id : UUID
+    @Enumerated status : StatusPedido
+    @Version versao : Long
+    @ElementCollection itens : List<ItemPedidoEmbeddable>
+    @ElementCollection historico : List<HistoricoEmbeddable>
+    + {static} from(Pedido) : PedidoJpa
+    + toDomain() : Pedido
+  }
+  class ItemPedidoEmbeddable <<@Embeddable>>
+  class HistoricoEmbeddable <<@Embeddable>>
+}
+
+package "infrastructure.client (RestClient)" #FDECEC {
+  class CadastroHttpGateway <<@Component>>
+  class EstoqueHttpGateway <<@Component>>
+  class ProducaoHttpGateway <<@Component>>
+  class FinanceiroHttpGateway <<@Component>>
+}
+
+interface "JpaRepository<PedidoJpa, UUID>" as JpaRepository
+
+PedidoController --> RegistrarPedidoUseCase
+PedidoController --> AlterarPedidoUseCase
+PedidoController --> MovimentarPedidoUseCase
+PedidoController --> ConsultarPedidosUseCase
+RastreioController --> RastrearPedidoUseCase
+
+RegistrarPedidoUseCase --> MontadorItensPedido
+AlterarPedidoUseCase --> MontadorItensPedido
+RegistrarPedidoUseCase --> PedidoRepository
+RegistrarPedidoUseCase --> CadastroGateway
+RegistrarPedidoUseCase --> EstoqueGateway
+RegistrarPedidoUseCase --> ProducaoGateway
+RegistrarPedidoUseCase --> FinanceiroGateway
+MovimentarPedidoUseCase --> PedidoRepository
+ConsultarPedidosUseCase --> PedidoRepository
+RastrearPedidoUseCase --> PedidoRepository
+MontadorItensPedido --> CadastroGateway
+PedidoRepository ..> Pedido
+
+PedidoRepositoryAdapter ..|> PedidoRepository
+PedidoRepositoryAdapter --> PedidoJpaRepository
+PedidoJpaRepository --|> JpaRepository
+PedidoJpa *-- ItemPedidoEmbeddable
+PedidoJpa *-- HistoricoEmbeddable
+PedidoJpa ..> Pedido : converte
+CadastroHttpGateway ..|> CadastroGateway
+EstoqueHttpGateway ..|> EstoqueGateway
+ProducaoHttpGateway ..|> ProducaoGateway
+FinanceiroHttpGateway ..|> FinanceiroGateway
+
+note bottom of PedidoJpa
+  Entidade JPA separada do domínio:
+  anotações de persistência não
+  "vazam" para a classe Pedido.
+end note
 @enduml

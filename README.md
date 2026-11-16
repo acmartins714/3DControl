@@ -282,8 +282,13 @@ sequenceDiagram
 ## 6. Diagrama de classes UML
 
 O diagrama completo, renderizado diretamente pelo GitHub, está em
-**[docs/uml/diagrama-classes.md](docs/uml/diagrama-classes.md)**. Ele contém o modelo de domínio de
-todos os serviços, as camadas da Arquitetura Limpa no `pedido-service` e a máquina de estados do pedido.
+**[docs/uml/diagrama-classes.md](docs/uml/diagrama-classes.md)**. Ele contém:
+
+- o modelo de domínio de todos os serviços (Java puro, sem anotações);
+- as camadas da Arquitetura Limpa no `pedido-service`, com as **anotações Spring** de cada classe
+  (`@RestController`, `@Service @Transactional`, `@Component`, `@Entity`…) indicadas nos estereótipos;
+- os componentes Spring de cada um dos outros serviços e uma tabela-resumo de anotações por camada;
+- a máquina de estados do pedido.
 A fonte PlantUML equivalente está em [docs/uml/diagrama-classes.puml](docs/uml/diagrama-classes.puml).
 
 Visão resumida das principais classes de domínio e suas relações:

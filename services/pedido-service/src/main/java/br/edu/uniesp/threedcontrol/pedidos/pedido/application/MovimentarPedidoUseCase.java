@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.pedidos.pedido.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.EstoqueGateway;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.FinanceiroGateway;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.ProducaoGateway;
@@ -12,6 +14,8 @@ import br.edu.uniesp.threedcontrol.pedidos.shared.domain.RecursoNaoEncontradoExc
 import java.util.UUID;
 
 /** Transições do ciclo de vida do pedido após o registro. */
+@Service
+@Transactional
 public class MovimentarPedidoUseCase {
 
     private final PedidoRepository pedidos;

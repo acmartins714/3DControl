@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.cadastros.insumo.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.cadastros.insumo.domain.Insumo;
 import br.edu.uniesp.threedcontrol.cadastros.insumo.domain.InsumoRepository;
 import br.edu.uniesp.threedcontrol.cadastros.shared.domain.RecursoNaoEncontradoException;
@@ -7,6 +9,8 @@ import br.edu.uniesp.threedcontrol.cadastros.shared.domain.RecursoNaoEncontradoE
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@Transactional
 public class GerenciarInsumosUseCase {
 
     private final InsumoRepository repository;
@@ -26,10 +30,12 @@ public class GerenciarInsumosUseCase {
         return repository.salvar(insumo);
     }
 
+    @Transactional(readOnly = true)
     public Insumo buscar(UUID id) {
         return repository.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Insumo", id));
     }
 
+    @Transactional(readOnly = true)
     public List<Insumo> listar() {
         return repository.listar();
     }

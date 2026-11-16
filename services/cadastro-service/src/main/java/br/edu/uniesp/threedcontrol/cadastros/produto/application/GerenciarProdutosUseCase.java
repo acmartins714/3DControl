@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.cadastros.produto.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.cadastros.insumo.domain.Insumo;
 import br.edu.uniesp.threedcontrol.cadastros.insumo.domain.InsumoRepository;
 import br.edu.uniesp.threedcontrol.cadastros.produto.domain.ComposicaoProduto;
@@ -12,6 +14,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Service
+@Transactional
 public class GerenciarProdutosUseCase {
 
     private final ProdutoRepository produtos;
@@ -37,10 +41,12 @@ public class GerenciarProdutosUseCase {
         return detalhar(produtos.salvar(produto));
     }
 
+    @Transactional(readOnly = true)
     public ProdutoDetalhado buscar(UUID id) {
         return detalhar(buscarProduto(id));
     }
 
+    @Transactional(readOnly = true)
     public List<Produto> listar(String categoria) {
         return produtos.listar(categoria);
     }

@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.pedidos.pedido.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.MontadorItensPedido.ItensResolvidos;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.PedidoCommands.NovoPedido;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.CadastroGateway;
@@ -17,6 +19,8 @@ import br.edu.uniesp.threedcontrol.pedidos.shared.domain.DomainException;
  * (ou sinaliza a compra) → inclui a ordem na fila de produção → abre a conta a receber.
  * Em caso de falha após efeitos remotos, executa compensações (saga orquestrada simples).
  */
+@Service
+@Transactional
 public class RegistrarPedidoUseCase {
 
     private final PedidoRepository pedidos;

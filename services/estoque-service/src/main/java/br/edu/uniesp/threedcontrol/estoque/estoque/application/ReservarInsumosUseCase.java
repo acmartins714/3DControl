@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.estoque.estoque.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.estoque.estoque.domain.EstoqueRepositories.ItemEstoqueRepository;
 import br.edu.uniesp.threedcontrol.estoque.estoque.domain.EstoqueRepositories.MovimentacaoRepository;
 import br.edu.uniesp.threedcontrol.estoque.estoque.domain.EstoqueRepositories.ReservaRepository;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
  * A operação é idempotente por pedido: reservas ativas anteriores são liberadas antes de reservar de novo
  * (necessário quando o pedido é alterado).
  */
+@Service
+@Transactional
 public class ReservarInsumosUseCase {
 
     private final ItemEstoqueRepository itens;

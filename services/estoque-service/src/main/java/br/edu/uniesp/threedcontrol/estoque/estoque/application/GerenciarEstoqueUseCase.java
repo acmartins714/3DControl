@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.estoque.estoque.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.estoque.estoque.domain.EstoqueRepositories.ItemEstoqueRepository;
 import br.edu.uniesp.threedcontrol.estoque.estoque.domain.EstoqueRepositories.MovimentacaoRepository;
 import br.edu.uniesp.threedcontrol.estoque.estoque.domain.ItemEstoque;
@@ -11,6 +13,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@Transactional
 public class GerenciarEstoqueUseCase {
 
     private final ItemEstoqueRepository itens;
@@ -43,20 +47,24 @@ public class GerenciarEstoqueUseCase {
         return itens.salvar(item);
     }
 
+    @Transactional(readOnly = true)
     public ItemEstoque buscar(UUID insumoId) {
         return itens.buscarPorInsumoId(insumoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Item de estoque do insumo", insumoId));
     }
 
+    @Transactional(readOnly = true)
     public List<ItemEstoque> listar() {
         return itens.listar();
     }
 
     /** Insumos cujo saldo livre está abaixo do mínimo: sinal para a administração comprar. */
+    @Transactional(readOnly = true)
     public List<ItemEstoque> listarAbaixoDoMinimo() {
         return itens.listar().stream().filter(ItemEstoque::abaixoDoMinimo).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<MovimentacaoEstoque> movimentacoes(UUID insumoId) {
         return movimentacoes.listarPorInsumo(insumoId);
     }

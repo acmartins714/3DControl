@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.cadastros.cliente.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.cadastros.cliente.domain.Cliente;
 import br.edu.uniesp.threedcontrol.cadastros.cliente.domain.ClienteRepository;
 import br.edu.uniesp.threedcontrol.cadastros.shared.domain.DomainException;
@@ -8,7 +10,9 @@ import br.edu.uniesp.threedcontrol.cadastros.shared.domain.RecursoNaoEncontradoE
 import java.util.List;
 import java.util.UUID;
 
-/** Casos de uso do cadastro de clientes. Classe Java pura: as dependências chegam pelo construtor. */
+/** Casos de uso do cadastro de clientes. As dependências (portas do domínio) chegam pelo construtor. */
+@Service
+@Transactional
 public class GerenciarClientesUseCase {
 
     private final ClienteRepository repository;
@@ -32,10 +36,12 @@ public class GerenciarClientesUseCase {
         return repository.salvar(cliente);
     }
 
+    @Transactional(readOnly = true)
     public Cliente buscar(UUID id) {
         return repository.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", id));
     }
 
+    @Transactional(readOnly = true)
     public List<Cliente> listar(String nome) {
         return repository.listar(nome);
     }

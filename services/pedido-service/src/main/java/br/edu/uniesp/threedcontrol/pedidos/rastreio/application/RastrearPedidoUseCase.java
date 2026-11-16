@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.pedidos.rastreio.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.domain.HistoricoStatus;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.domain.Pedido;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.domain.PedidoRepository;
@@ -12,6 +14,8 @@ import java.util.List;
  * Consulta pública de rastreio por código — pensada para o atendimento, o site e a integração
  * automatizada do WhatsApp (SAC). Expõe apenas dados não sensíveis do pedido.
  */
+@Service
+@Transactional(readOnly = true)
 public class RastrearPedidoUseCase {
 
     public record Etapa(String status, String descricao, String dataHora, String observacao) {

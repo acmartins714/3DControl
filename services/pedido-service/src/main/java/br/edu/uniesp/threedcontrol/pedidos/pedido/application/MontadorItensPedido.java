@@ -1,5 +1,6 @@
 package br.edu.uniesp.threedcontrol.pedidos.pedido.application;
 
+import org.springframework.stereotype.Component;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.PedidoCommands.ItemCommand;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.CadastroGateway;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.CadastroGateway.InsumoNecessario;
@@ -18,6 +19,7 @@ import java.util.UUID;
  * Componente de aplicação que resolve os itens do pedido no catálogo (preço, custo, categoria)
  * e calcula a necessidade total de insumos (ficha técnica × quantidade).
  */
+@Component
 public class MontadorItensPedido {
 
     public record ItensResolvidos(List<ItemPedido> itens, List<InsumoNecessario> necessidades) {

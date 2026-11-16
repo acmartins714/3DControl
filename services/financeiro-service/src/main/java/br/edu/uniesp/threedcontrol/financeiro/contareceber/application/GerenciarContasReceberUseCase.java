@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.financeiro.contareceber.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.financeiro.contareceber.domain.*;
 import br.edu.uniesp.threedcontrol.financeiro.shared.domain.DomainException;
 import br.edu.uniesp.threedcontrol.financeiro.shared.domain.RecursoNaoEncontradoException;
@@ -8,6 +10,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@Transactional
 public class GerenciarContasReceberUseCase {
 
     /** Resposta usada pelo pedido-service para autorizar a entrega. */
@@ -51,15 +55,18 @@ public class GerenciarContasReceberUseCase {
         });
     }
 
+    @Transactional(readOnly = true)
     public SituacaoFinanceira situacao(UUID pedidoId) {
         return SituacaoFinanceira.de(buscar(pedidoId));
     }
 
+    @Transactional(readOnly = true)
     public ContaReceber buscar(UUID pedidoId) {
         return repository.buscarPorPedidoId(pedidoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Conta a receber do pedido", pedidoId));
     }
 
+    @Transactional(readOnly = true)
     public List<ContaReceber> listar(StatusConta status) {
         return repository.listar(status);
     }

@@ -125,25 +125,29 @@ Cada feature é dividida em três camadas, com a **regra da dependência** apont
 
 ```
  infrastructure  ──►  application  ──►  domain
- (Spring, JPA,        (casos de uso,     (entidades, regras,
-  REST, HTTP)          portas)            exceções — Java puro)
+ (@RestController,    (@Service,         (entidades, regras,
+  @Entity, HTTP)       @Transactional,    exceções — Java puro)
+                       portas)
 ```
 
 | Camada | Conteúdo | Depende de |
 |---|---|---|
 | `domain` | Entidades e agregados (`Pedido`, `ContaReceber`, `ItemEstoque`, ...), objetos de valor (`record`s), serviços de domínio (`FilaProducao`, `AnaliseLucratividade`), exceções de negócio e **portas de persistência** (`PedidoRepository`) | nada (Java puro) |
-| `application` | **Casos de uso** (`RegistrarPedidoUseCase`, `ReservarInsumosUseCase`, ...), comandos de entrada e **portas de saída** para outros serviços (`EstoqueGateway`, `FinanceiroGateway`, ...) | `domain` |
-| `infrastructure` | Adaptadores: `web` (controllers REST e DTOs), `persistence` (entidades JPA e Spring Data), `client` (clientes HTTP de outros serviços), `config` (montagem dos beans) | `application`, `domain`, frameworks |
+| `application` | **Casos de uso** `@Service` + `@Transactional` (`RegistrarPedidoUseCase`, `ReservarInsumosUseCase`, ...), comandos de entrada e **portas de saída** para outros serviços (`EstoqueGateway`, `FinanceiroGateway`, ...) | `domain` (+ anotações do Spring) |
+| `infrastructure` | Adaptadores: `web` (`@RestController` e DTOs), `persistence` (`@Entity` e Spring Data), `client` (`RestClient` para outros serviços) | `application`, `domain`, frameworks |
 
 **Por quê:**
 
 - **As regras de negócio críticas ficam protegidas e testáveis.** A Regra de Ouro, a validação de
   quitação na entrega e a reserva de insumos estão em classes Java puras, testadas com JUnit **sem subir
   Spring nem banco** (`mvn test` roda em segundos).
-- **Independência de framework e de banco.** O domínio não conhece JPA, HTTP nem Spring. Os casos de uso
-  não têm `@Service` nem `@Transactional`: são instanciados em classes `@Configuration` da infraestrutura,
-  e a transação é aplicada **declarativamente** por um *advisor* AOP sobre as classes `*UseCase`
-  (`shared/infrastructure/config/TransacaoConfig`).
+- **Domínio independente de framework e de banco.** As entidades e regras não conhecem JPA, HTTP nem
+  Spring.
+- **Aplicação pragmática.** Os casos de uso usam `@Service` e `@Transactional`, como é idiomático no
+  Spring, o que dispensa configuração manual de beans. Cada caso de uso é uma unidade de trabalho
+  atômica e as consultas usam `@Transactional(readOnly = true)`. Essa é a única concessão ao framework
+  fora da infraestrutura: os casos de uso continuam dependendo apenas de **interfaces** (portas), nunca
+  de JPA ou de HTTP.
 - **Inversão de dependência (o "D" do SOLID) nas integrações.** O `RegistrarPedidoUseCase` depende da
   interface `EstoqueGateway`, e não do HTTP. Trocar REST por mensageria no futuro significa escrever um
   novo adaptador, sem tocar em nenhuma regra de negócio.
@@ -222,7 +226,7 @@ flowchart LR
             │   │   ├── StatusPedido.java       (máquina de estados)
             │   │   ├── PedidoNaoAlteravelException.java
             │   │   └── PedidoRepository.java   (porta)
-            │   ├── application/                ◄── casos de uso
+            │   ├── application/                ◄── casos de uso (@Service)
             │   │   ├── RegistrarPedidoUseCase.java
             │   │   ├── AlterarPedidoUseCase.java
             │   │   ├── MovimentarPedidoUseCase.java
@@ -230,10 +234,9 @@ flowchart LR
             │   └── infrastructure/             ◄── adaptadores
             │       ├── web/                    (PedidoController + DTOs)
             │       ├── persistence/            (PedidoJpa + Spring Data)
-            │       ├── client/                 (RestClient p/ outros serviços)
-            │       └── config/                 (montagem dos beans)
+            │       └── client/                 (RestClient p/ outros serviços)
             ├── rastreio/                       ◄── FEATURE
-            └── shared/                         (exceções base, handler, transações)
+            └── shared/                         (exceções base, tratamento de erros HTTP)
 ```
 
 ---

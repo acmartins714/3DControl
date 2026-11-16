@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.financeiro.lucratividade.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.financeiro.contareceber.domain.ContaReceberRepository;
 import br.edu.uniesp.threedcontrol.financeiro.lucratividade.domain.AnaliseLucratividade;
 import br.edu.uniesp.threedcontrol.financeiro.lucratividade.domain.AnaliseLucratividade.LucratividadeCategoria;
@@ -7,6 +9,8 @@ import br.edu.uniesp.threedcontrol.financeiro.lucratividade.domain.AnaliseLucrat
 import java.time.LocalDate;
 import java.util.List;
 
+@Service
+@Transactional(readOnly = true)
 public class AnalisarLucratividadeUseCase {
 
     private final ContaReceberRepository contas;

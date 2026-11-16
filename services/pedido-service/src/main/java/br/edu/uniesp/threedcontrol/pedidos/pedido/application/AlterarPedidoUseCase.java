@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.pedidos.pedido.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.MontadorItensPedido.ItensResolvidos;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.PedidoCommands.AlteracaoPedido;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.application.port.EstoqueGateway;
@@ -16,6 +18,8 @@ import java.util.UUID;
  * A Regra de Ouro é verificada ANTES de qualquer efeito colateral; depois a alteração é propagada
  * ao estoque (nova reserva), à produção (replanejamento) e ao financeiro (novo valor).
  */
+@Service
+@Transactional
 public class AlterarPedidoUseCase {
 
     private final PedidoRepository pedidos;

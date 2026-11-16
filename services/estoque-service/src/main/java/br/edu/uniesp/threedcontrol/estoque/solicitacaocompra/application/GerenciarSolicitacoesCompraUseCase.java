@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.estoque.solicitacaocompra.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.estoque.estoque.application.GerenciarEstoqueUseCase;
 import br.edu.uniesp.threedcontrol.estoque.solicitacaocompra.domain.SolicitacaoCompra;
 import br.edu.uniesp.threedcontrol.estoque.solicitacaocompra.domain.SolicitacaoCompraRepository;
@@ -9,6 +11,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@Transactional
 public class GerenciarSolicitacoesCompraUseCase {
 
     private final SolicitacaoCompraRepository repository;
@@ -19,6 +23,7 @@ public class GerenciarSolicitacoesCompraUseCase {
         this.estoque = estoque;
     }
 
+    @Transactional(readOnly = true)
     public List<SolicitacaoCompra> listar(SolicitacaoCompra.Status status) {
         return repository.listar(status);
     }

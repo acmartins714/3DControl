@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.producao.ordemproducao.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.producao.ordemproducao.domain.*;
 import br.edu.uniesp.threedcontrol.producao.shared.domain.RecursoNaoEncontradoException;
 
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.UUID;
 
 /** Inclusão/atualização de ordens na fila (acionado pelo pedido-service) e consulta da fila priorizada. */
+@Service
+@Transactional
 public class PlanejarProducaoUseCase {
 
     public record ItemFila(OrdemProducao ordem, Prioridade prioridade, boolean atrasada) {
@@ -42,6 +46,7 @@ public class PlanejarProducaoUseCase {
         });
     }
 
+    @Transactional(readOnly = true)
     public List<ItemFila> fila() {
         LocalDate hoje = LocalDate.now(clock);
         List<OrdemProducao> abertas = repository.listarPorStatus(EnumSet.of(StatusOrdem.AGUARDANDO, StatusOrdem.EM_PRODUCAO));
@@ -50,6 +55,7 @@ public class PlanejarProducaoUseCase {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public OrdemProducao buscar(UUID id) {
         return repository.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de produção", id));
     }

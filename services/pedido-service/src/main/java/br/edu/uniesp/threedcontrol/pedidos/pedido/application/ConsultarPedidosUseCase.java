@@ -1,5 +1,7 @@
 package br.edu.uniesp.threedcontrol.pedidos.pedido.application;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.domain.Pedido;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.domain.PedidoRepository;
 import br.edu.uniesp.threedcontrol.pedidos.pedido.domain.StatusPedido;
@@ -8,6 +10,8 @@ import br.edu.uniesp.threedcontrol.pedidos.shared.domain.RecursoNaoEncontradoExc
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@Transactional(readOnly = true)
 public class ConsultarPedidosUseCase {
 
     private final PedidoRepository pedidos;

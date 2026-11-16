@@ -1,0 +1,360 @@
+@startuml diagrama-classes
+!pragma layout smetana
+title 3D Control — Diagrama de Classes (modelo de domínio por microsserviço)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #444444
+}
+skinparam package {
+  BorderColor #555555
+}
+hide empty members
+
+' =====================================================================
+package "cadastro-service" as CAD #EEF4FF {
+
+  enum CanalAtendimento <<cadastro>> {
+    WHATSAPP
+    INSTAGRAM
+    FACEBOOK
+    TELEFONE
+    SITE
+    PRESENCIAL
+  }
+
+  class Cliente {
+    - id : UUID
+    - nome : String
+    - documento : String
+    - telefone : String
+    - email : String
+    - canalPreferencial : CanalAtendimento
+    - preferenciasPersonalizacao : String
+    - ativo : boolean
+    - cadastradoEm : LocalDateTime
+    + {static} novo(...) : Cliente
+    + atualizar(...) : void
+    + inativar() : void
+  }
+
+  enum UnidadeMedida {
+    UN, G, KG, ML, L, CM, M, M2
+  }
+
+  class Insumo {
+    - id : UUID
+    - nome : String
+    - descricao : String
+    - unidadeMedida : UnidadeMedida
+    - custoUnitario : BigDecimal
+    - usoRegular : boolean
+    - ativo : boolean
+    + atualizar(...) : void
+    + inativar() : void
+  }
+
+  class Produto {
+    - id : UUID
+    - nome : String
+    - descricao : String
+    - categoria : String
+    - especificacoesTecnicas : String
+    - tempoMedioFabricacaoHoras : int
+    - precoBase : BigDecimal
+    - ativo : boolean
+    + calcularCustoInsumos(custos : Map<UUID, BigDecimal>) : BigDecimal
+    + atualizar(...) : void
+    + inativar() : void
+  }
+
+  class ComposicaoProduto <<record>> {
+    + insumoId : UUID
+    + quantidade : BigDecimal
+  }
+
+  Cliente --> CanalAtendimento
+  Insumo --> UnidadeMedida
+  Produto *-- "0..*" ComposicaoProduto : ficha técnica
+  ComposicaoProduto ..> Insumo : insumoId
+}
+
+' =====================================================================
+package "pedido-service" as PED #FFF6E5 {
+
+  enum StatusPedido {
+    EM_TRIAGEM
+    AGUARDANDO_INSUMO
+    EM_PRODUCAO
+    FINALIZADO
+    EM_ROTA_ENTREGA
+    ENTREGUE
+    CANCELADO
+    --
+    + permiteAlteracao() : boolean
+    + podeTransitarPara(destino) : boolean
+  }
+
+  class Pedido <<aggregate root>> {
+    - id : UUID
+    - codigo : String
+    - clienteId : UUID
+    - canalOrigem : CanalAtendimento
+    - atendenteResponsavel : String
+    - prazoEntrega : LocalDate
+    - modalidadeEntrega : ModalidadeEntrega
+    - condicaoPagamento : CondicaoPagamento
+    - observacoes : String
+    - status : StatusPedido
+    - versao : Long
+    + {static} registrar(...) : Pedido
+    + garantirAlteravel() : void
+    + alterar(...) : void
+    + atualizarDisponibilidadeInsumos(ok : boolean, detalhe : String) : void
+    + iniciarProducao() : void
+    + finalizarProducao() : void
+    + despachar() : void
+    + confirmarEntrega(quitado : boolean, saldo : BigDecimal) : void
+    + cancelar(motivo : String) : void
+    + valorTotal() : BigDecimal
+    + custoEstimadoTotal() : BigDecimal
+  }
+
+  class ItemPedido <<record>> {
+    + produtoId : UUID
+    + nomeProduto : String
+    + categoria : String
+    + quantidade : int
+    + precoUnitario : BigDecimal
+    + custoUnitarioEstimado : BigDecimal
+    + personalizacao : String
+    + subtotal() : BigDecimal
+  }
+
+  class HistoricoStatus <<record>> {
+    + status : StatusPedido
+    + dataHora : LocalDateTime
+    + observacao : String
+  }
+
+  enum ModalidadeEntrega {
+    RETIRADA
+    ENTREGA
+  }
+
+  enum CondicaoPagamento {
+    A_VISTA
+    SINAL_E_RESTANTE_NA_ENTREGA
+    PARCELADO
+    PAGAMENTO_NA_ENTREGA
+  }
+
+  class PedidoNaoAlteravelException
+
+  interface PedidoRepository <<port>>
+  interface CadastroGateway <<port>>
+  interface EstoqueGateway <<port>>
+  interface ProducaoGateway <<port>>
+  interface FinanceiroGateway <<port>>
+
+  class RegistrarPedidoUseCase <<use case>>
+  class AlterarPedidoUseCase <<use case>>
+  class MovimentarPedidoUseCase <<use case>>
+  class RastrearPedidoUseCase <<use case>>
+
+  Pedido *-- "1..*" ItemPedido
+  Pedido *-- "1..*" HistoricoStatus : linha do tempo
+  Pedido --> StatusPedido
+  Pedido --> ModalidadeEntrega
+  Pedido --> CondicaoPagamento
+  Pedido ..> PedidoNaoAlteravelException : <<throws>>
+
+  RegistrarPedidoUseCase ..> PedidoRepository
+  RegistrarPedidoUseCase ..> CadastroGateway
+  RegistrarPedidoUseCase ..> EstoqueGateway
+  RegistrarPedidoUseCase ..> ProducaoGateway
+  RegistrarPedidoUseCase ..> FinanceiroGateway
+  AlterarPedidoUseCase ..> PedidoRepository
+  MovimentarPedidoUseCase ..> PedidoRepository
+  RastrearPedidoUseCase ..> PedidoRepository
+  PedidoRepository ..> Pedido
+}
+
+' =====================================================================
+package "estoque-service" as EST #EAF7EA {
+
+  class ItemEstoque <<aggregate root>> {
+    - id : UUID
+    - insumoId : UUID
+    - nomeInsumo : String
+    - quantidadeDisponivel : BigDecimal
+    - quantidadeReservada : BigDecimal
+    - estoqueMinimo : BigDecimal
+    - versao : Long
+    + registrarEntrada(q : BigDecimal) : void
+    + saldoLivre() : BigDecimal
+    + reservar(q : BigDecimal) : void
+    + liberarReserva(q : BigDecimal) : void
+    + consumirReserva(q : BigDecimal) : void
+    + abaixoDoMinimo() : boolean
+  }
+
+  class Reserva {
+    - id : UUID
+    - pedidoId : UUID
+    - insumoId : UUID
+    - quantidade : BigDecimal
+    - status : Reserva.Status
+    + consumir() : void
+    + cancelar() : void
+  }
+
+  class MovimentacaoEstoque <<record>> {
+    + insumoId : UUID
+    + tipo : Tipo {ENTRADA, RESERVA, LIBERACAO_RESERVA, CONSUMO}
+    + quantidade : BigDecimal
+    + pedidoId : UUID
+    + dataHora : LocalDateTime
+  }
+
+  class SolicitacaoCompra {
+    - id : UUID
+    - insumoId : UUID
+    - quantidade : BigDecimal
+    - pedidoId : UUID
+    - status : Status {PENDENTE, RECEBIDA, CANCELADA}
+    + registrarRecebimento() : void
+    + cancelar() : void
+  }
+
+  class ReservarInsumosUseCase <<use case>> {
+    + reservar(pedidoId, necessidades) : ResultadoReserva
+    + consumir(pedidoId) : void
+    + liberar(pedidoId) : void
+  }
+
+  ItemEstoque "1" -- "0..*" Reserva : insumoId
+  ItemEstoque "1" -- "0..*" MovimentacaoEstoque : trilha de auditoria
+  ReservarInsumosUseCase ..> ItemEstoque
+  ReservarInsumosUseCase ..> Reserva
+  ReservarInsumosUseCase ..> SolicitacaoCompra : cria quando falta insumo
+}
+
+' =====================================================================
+package "producao-service" as PRO #F3ECFA {
+
+  enum StatusOrdem {
+    AGUARDANDO
+    EM_PRODUCAO
+    CONCLUIDA
+    CANCELADA
+  }
+
+  enum Prioridade {
+    URGENTE
+    ALTA
+    NORMAL
+    BAIXA
+    + {static} para(prazo, hoje) : Prioridade
+  }
+
+  class OrdemProducao <<aggregate root>> {
+    - id : UUID
+    - pedidoId : UUID
+    - codigoPedido : String
+    - prazoEntrega : LocalDate
+    - insumosDisponiveis : boolean
+    - status : StatusOrdem
+    - responsavel : String
+    - retrabalhos : int
+    + replanejar(prazo, insumos) : void
+    + iniciar(responsavel) : void
+    + registrarRetrabalho(motivo) : void
+    + concluir() : void
+    + cancelar() : void
+    + prioridade(hoje) : Prioridade
+  }
+
+  class FilaProducao <<domain service>> {
+    + {static} ordenar(ordens, hoje) : List<OrdemProducao>
+  }
+
+  interface PedidoGateway <<port>> {
+    + notificarInicioProducao(pedidoId) : void
+    + notificarConclusaoProducao(pedidoId) : void
+  }
+
+  OrdemProducao --> StatusOrdem
+  OrdemProducao ..> Prioridade
+  FilaProducao ..> OrdemProducao
+}
+
+' =====================================================================
+package "financeiro-service" as FIN #FDECEC {
+
+  enum StatusConta {
+    ABERTA
+    PARCIALMENTE_PAGA
+    QUITADA
+    CANCELADA
+  }
+
+  class ContaReceber <<aggregate root>> {
+    - id : UUID
+    - pedidoId : UUID
+    - clienteId : UUID
+    - status : StatusConta
+    + registrarPagamento(valor, forma, obs) : Pagamento
+    + atualizarItens(itens) : void
+    + liberadaParaEntrega() : boolean
+    + valorTotal() : BigDecimal
+    + totalPago() : BigDecimal
+    + saldoRemanescente() : BigDecimal
+    + cancelar() : void
+  }
+
+  class ItemConta <<record>> {
+    + categoria : String
+    + valorVenda : BigDecimal
+    + custoEstimado : BigDecimal
+  }
+
+  class Pagamento <<record>> {
+    + id : UUID
+    + valor : BigDecimal
+    + tipo : TipoPagamento {SINAL, PARCELA, QUITACAO}
+    + forma : FormaPagamento {PIX, DINHEIRO, CARTAO_CREDITO, CARTAO_DEBITO, TRANSFERENCIA}
+    + pagoEm : LocalDateTime
+  }
+
+  class AnaliseLucratividade <<domain service>> {
+    + {static} porCategoria(contas) : List<LucratividadeCategoria>
+  }
+
+  ContaReceber *-- "1..*" ItemConta
+  ContaReceber *-- "0..*" Pagamento
+  ContaReceber --> StatusConta
+  AnaliseLucratividade ..> ContaReceber
+}
+
+' =====================================================================
+' Referências entre contextos (somente por identificador — sem FK entre bancos)
+Pedido ..> Cliente : clienteId
+ItemPedido ..> Produto : produtoId
+ItemEstoque ..> Insumo : insumoId
+Reserva ..> Pedido : pedidoId
+OrdemProducao ..> Pedido : pedidoId
+ContaReceber ..> Pedido : pedidoId
+
+note bottom of Pedido
+  <b>Regra de Ouro</b>: alterar() só é permitido
+  enquanto status.permiteAlteracao()
+  (EM_TRIAGEM ou AGUARDANDO_INSUMO).
+  confirmarEntrega() exige pagamento quitado.
+end note
+
+@enduml

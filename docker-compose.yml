@@ -1,0 +1,92 @@
+name: 3dcontrol
+
+x-db-env: &db-env
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USER: threedcontrol
+  DB_PASSWORD: threedcontrol
+
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: threedcontrol
+      POSTGRES_PASSWORD: threedcontrol
+      POSTGRES_DB: postgres
+    ports:
+      # Porta no host configurável (ex.: POSTGRES_HOST_PORT=5433 se já houver um PostgreSQL local na 5432)
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U threedcontrol"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  cadastro-service:
+    <<: *service
+    build: { context: ., args: { MODULE: services/cadastro-service } }
+    environment:
+      <<: *db-env
+      DB_NAME: cadastro_db
+    ports: ["8081:8081"]
+
+  pedido-service:
+    <<: *service
+    build: { context: ., args: { MODULE: services/pedido-service } }
+    environment:
+      <<: *db-env
+      DB_NAME: pedido_db
+      CADASTRO_URL: http://cadastro-service:8081
+      ESTOQUE_URL: http://estoque-service:8083
+      PRODUCAO_URL: http://producao-service:8084
+      FINANCEIRO_URL: http://financeiro-service:8085
+    ports: ["8082:8082"]
+
+  estoque-service:
+    <<: *service
+    build: { context: ., args: { MODULE: services/estoque-service } }
+    environment:
+      <<: *db-env
+      DB_NAME: estoque_db
+    ports: ["8083:8083"]
+
+  producao-service:
+    <<: *service
+    build: { context: ., args: { MODULE: services/producao-service } }
+    environment:
+      <<: *db-env
+      DB_NAME: producao_db
+      PEDIDO_URL: http://pedido-service:8082
+    ports: ["8084:8084"]
+
+  financeiro-service:
+    <<: *service
+    build: { context: ., args: { MODULE: services/financeiro-service } }
+    environment:
+      <<: *db-env
+      DB_NAME: financeiro_db
+    ports: ["8085:8085"]
+
+  api-gateway:
+    restart: unless-stopped
+    build: { context: ., args: { MODULE: api-gateway } }
+    environment:
+      CADASTRO_URL: http://cadastro-service:8081
+      PEDIDO_URL: http://pedido-service:8082
+      ESTOQUE_URL: http://estoque-service:8083
+      PRODUCAO_URL: http://producao-service:8084
+      FINANCEIRO_URL: http://financeiro-service:8085
+    depends_on: [cadastro-service, pedido-service, estoque-service, producao-service, financeiro-service]
+    ports: ["8080:8080"]
+
+volumes:
+  pgdata:

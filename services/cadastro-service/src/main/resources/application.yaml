@@ -1,0 +1,21 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: cadastro-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:cadastro_db}
+    username: ${DB_USER:threedcontrol}
+    password: ${DB_PASSWORD:threedcontrol}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

@@ -411,6 +411,36 @@ docker compose start financeiro-service
 
 Para apontar para outro endereço, defina `API_BASE_URL` (padrão: `http://localhost:8080/api`).
 
+### Coleção do Insomnia
+
+Arquivo: [`docs/insomnia/3dcontrol-insomnia.json`](docs/insomnia/3dcontrol-insomnia.json), com 58 requisições
+de todos os endpoints, chamando pelo gateway.
+
+1. No Insomnia: **Import** → selecione o arquivo → importe como *Collection*.
+2. Selecione o ambiente **Local (api-gateway :8080)**. As variáveis ficam em *Base Environment*:
+   `base_url` e `prazo_entrega`, que precisa ser hoje ou uma data futura.
+3. Execute as pastas **na ordem numerada** (1 → 7). Os IDs são encadeados automaticamente por *response
+   tags*: o pedido usa o id do cliente e do produto criados antes, a produção usa a ordem do pedido, e
+   assim por diante.
+
+| Pasta | Conteúdo |
+|---|---|
+| 1. Cadastros | Clientes, insumos e produtos com ficha técnica |
+| 2. Estoque | Habilitar controle, entradas, saldos, alertas, movimentações |
+| 3. Pedidos | Registrar (WhatsApp e site), alterar, reprocessar insumos, despachar, entregar, cancelar |
+| 4. Solicitações de compra | Pendentes do pedido, recebimento, cancelamento |
+| 5. Produção | Fila, ordem do pedido, iniciar, retrabalho, concluir |
+| 6. Financeiro | Contas, situação, sinal, quitação, lucratividade |
+| 7. Rastreio | Consulta pelo código do pedido |
+| 8. Integração interna | Endpoints chamados entre serviços (para depuração) |
+
+O roteiro já demonstra as regras de negócio. O pedido nasce *Aguardando insumo* e abre uma solicitação de
+compra. Depois do recebimento e do reprocessamento, ele vai para a produção. **Confirmar entrega**
+responde 422 até que o sinal e a quitação sejam registrados na pasta 6.
+
+A coleção é gerada por [`scripts/insomnia/gerar_colecao.py`](scripts/insomnia/gerar_colecao.py). Ao criar
+ou alterar um endpoint, atualize o script e rode `python scripts/insomnia/gerar_colecao.py`.
+
 ---
 
 ## 9. Endpoints
@@ -429,8 +459,8 @@ Todos acessíveis pelo gateway com o prefixo `/api` (ex.: `GET http://localhost:
 | pedido | `GET /rastreio/{codigo}` | Rastreio público (atendimento, site e WhatsApp) |
 | estoque | `POST/GET /estoque` · `GET/PUT /estoque/{insumoId}` · `GET /estoque/alertas` | Saldos e alertas de mínimo |
 | estoque | `POST /estoque/{insumoId}/entradas` · `GET /estoque/{insumoId}/movimentacoes` | Entradas e auditoria |
-| estoque | `GET /solicitacoes-compra?status=` · `POST /solicitacoes-compra/{id}/recebimento` | Demandas de compra |
-| produção | `GET /producao/fila` · `POST /producao/ordens/{id}/inicio` · `/conclusao` · `/retrabalhos` | Chão de fábrica |
+| estoque | `GET /solicitacoes-compra?status=&pedidoId=` · `POST /solicitacoes-compra/{id}/recebimento` | Demandas de compra |
+| produção | `GET /producao/fila` · `GET /producao/ordens/pedido/{pedidoId}` · `POST /producao/ordens/{id}/inicio` · `/conclusao` · `/retrabalhos` | Chão de fábrica |
 | financeiro | `GET /financeiro/contas?status=` · `GET /financeiro/contas/pedido/{pedidoId}` | Contas a receber |
 | financeiro | `POST /financeiro/contas/pedido/{pedidoId}/pagamentos` | Sinal / parcela / quitação |
 | financeiro | `GET /financeiro/lucratividade?inicio=&fim=` | Margem por categoria de produto |

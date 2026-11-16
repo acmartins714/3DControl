@@ -59,4 +59,11 @@ public class PlanejarProducaoUseCase {
     public OrdemProducao buscar(UUID id) {
         return repository.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de produção", id));
     }
+
+    /** Ordem mais recente de um pedido (útil para o atendimento localizar a ordem a partir do pedido). */
+    @Transactional(readOnly = true)
+    public OrdemProducao buscarPorPedido(UUID pedidoId) {
+        return repository.buscarPorPedidoId(pedidoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de produção do pedido", pedidoId));
+    }
 }

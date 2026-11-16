@@ -73,6 +73,11 @@ class OrdemProducaoController {
         return OrdemResponse.from(planejamento.buscar(id));
     }
 
+    @GetMapping("/ordens/pedido/{pedidoId}")
+    OrdemResponse buscarPorPedido(@PathVariable UUID pedidoId) {
+        return OrdemResponse.from(planejamento.buscarPorPedido(pedidoId));
+    }
+
     @PostMapping("/ordens/{id}/inicio")
     OrdemResponse iniciar(@PathVariable UUID id, @Valid @RequestBody InicioRequest r) {
         return OrdemResponse.from(execucao.iniciar(id, r.responsavel()));

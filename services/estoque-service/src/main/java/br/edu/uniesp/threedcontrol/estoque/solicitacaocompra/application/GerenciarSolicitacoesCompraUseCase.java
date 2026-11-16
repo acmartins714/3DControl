@@ -24,8 +24,10 @@ public class GerenciarSolicitacoesCompraUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<SolicitacaoCompra> listar(SolicitacaoCompra.Status status) {
-        return repository.listar(status);
+    public List<SolicitacaoCompra> listar(SolicitacaoCompra.Status status, UUID pedidoId) {
+        return repository.listar(status).stream()
+                .filter(s -> pedidoId == null || pedidoId.equals(s.getPedidoId()))
+                .toList();
     }
 
     /** Registra a chegada do material: dá entrada no estoque e encerra a solicitação. */

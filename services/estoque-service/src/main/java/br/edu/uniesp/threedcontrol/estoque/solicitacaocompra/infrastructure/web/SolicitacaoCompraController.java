@@ -31,8 +31,9 @@ class SolicitacaoCompraController {
     }
 
     @GetMapping
-    List<SolicitacaoResponse> listar(@RequestParam(required = false) SolicitacaoCompra.Status status) {
-        return useCase.listar(status).stream().map(SolicitacaoResponse::from).toList();
+    List<SolicitacaoResponse> listar(@RequestParam(required = false) SolicitacaoCompra.Status status,
+                                     @RequestParam(required = false) UUID pedidoId) {
+        return useCase.listar(status, pedidoId).stream().map(SolicitacaoResponse::from).toList();
     }
 
     @PostMapping("/{id}/recebimento")

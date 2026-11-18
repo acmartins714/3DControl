@@ -397,6 +397,12 @@ Na primeira vez leva alguns minutos, por causa do build das imagens. Depois diss
    - Nenhuma variável de ambiente é necessária: os valores padrão apontam para `localhost:5433` (o banco
      do Docker) e para os outros serviços em `localhost:808X`.
 
+**Alternativa: configurações *[Maven]*.** Na pasta *3D Control (Maven)* existe
+**3D Control - todos os serviços [Maven]**, que executa `spring-boot:run` em cada módulo usando o Maven de
+verdade. Ela funciona mesmo quando a importação Maven do IntelliJ está desatualizada, e o Run comum falha
+com *"Could not find or load main class"*. Nesse caso, corrija a importação com **Ctrl+Shift+A →
+"Reload All Maven Projects"** (a opção **sem** "Incrementally").
+
 Sem IntelliJ, o equivalente para um serviço é `./mvnw -pl services/cadastro-service spring-boot:run`.
 
 > O PostgreSQL do Docker fica exposto no host na porta **5433**, para não conflitar com um PostgreSQL
@@ -454,6 +460,7 @@ O Docker Desktop continua aberto depois desses comandos. Para fechá-lo: botão 
 | Pedido recusado por prazo | `prazo_entrega` no passado | Atualize a variável no *Base Environment* do Insomnia |
 | Erro 404 no navegador | Endereço sem `/api` | Use `http://localhost:8080/api/...` |
 | *"Cannot resolve symbol"* no IntelliJ | Projeto Maven desatualizado | Aba Maven → **Reload All Maven Projects** |
+| *"Could not find or load main class"* ao dar Run no IntelliJ | Importação Maven do IntelliJ incompleta (módulos sem dependências) | Ctrl+Shift+A → **Reload All Maven Projects** (sem "Incrementally"); enquanto isso, use **3D Control - todos os serviços [Maven]** |
 
 ### Variáveis de ambiente (opcional)
 

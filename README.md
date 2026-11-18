@@ -357,22 +357,33 @@ Pré-requisito: Docker Desktop.
 docker compose up --build
 ```
 
-> Se já existir um PostgreSQL local usando a porta 5432, mude a porta publicada no host:
-> `POSTGRES_HOST_PORT=5433 docker compose up --build`
-
-- Gateway: <http://localhost:8080/api/...>
+- Gateway: <http://localhost:8080/api/...> (a raiz `http://localhost:8080` responde 404; use `/api/...`)
 - Swagger de cada serviço: `http://localhost:808X/swagger-ui.html` (X = 1 a 5)
+- O PostgreSQL do Docker fica exposto no host na porta **5433**, para não conflitar com um PostgreSQL
+  instalado na máquina (5432). Para mudar: `POSTGRES_HOST_PORT=5434 docker compose up -d`.
 
-### Opção B: serviços pela IDE / Maven
+### Opção B: serviços pelo IntelliJ (desenvolvimento)
 
-1. Suba somente o banco: `docker compose up -d postgres`
-2. Rode cada serviço (ordem indiferente):
+> **Não misture as opções A e B.** Se os serviços estiverem no Docker, as portas 8080 a 8085 já estão
+> ocupadas e o IntelliJ falha com *"Port 808X was already in use"*. Antes, rode `docker compose down`.
+
+1. Suba **somente o banco** no Docker:
+   ```bash
+   docker compose up -d postgres
+   ```
+2. No IntelliJ, no seletor de execução (canto superior direito), escolha **3D Control - todos os
+   serviços** e clique em **Run**. Essa configuração sobe os 6 serviços de uma vez. Na pasta
+   *3D Control* também há uma configuração para cada serviço.
+   - As configurações estão versionadas em [`.run/`](.run) e aparecem automaticamente ao abrir o projeto.
+   - Nenhuma variável de ambiente é necessária: os valores padrão apontam para `localhost:5433` (o banco
+     do Docker) e para os outros serviços em `localhost:808X`.
+3. Para parar, clique em **Stop** no IntelliJ e depois rode `docker compose stop postgres`.
+
+Sem IntelliJ, o equivalente para um serviço é:
 
 ```bash
 ./mvnw -pl services/cadastro-service spring-boot:run
 ```
-
-(repita para `pedido-service`, `estoque-service`, `producao-service`, `financeiro-service` e `api-gateway`).
 
 As conexões aceitam variáveis de ambiente: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` e
 `*_URL` para os serviços integrados (veja `application.yaml` de cada módulo).

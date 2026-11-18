@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="financeiro-service (:8085)" type="Application" factoryName="Application" folderName="3D Control">
+    <option name="MAIN_CLASS_NAME" value="br.edu.uniesp.threedcontrol.financeiro.FinanceiroServiceApplication" />
+    <module name="financeiro-service" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

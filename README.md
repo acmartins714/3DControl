@@ -20,7 +20,7 @@ produção e financeiro.
 5. [Fluxos principais](#5-fluxos-principais)
 6. [Diagrama de classes UML](#6-diagrama-de-classes-uml)
 7. [Tecnologias](#7-tecnologias)
-8. [Como executar](#8-como-executar)
+8. [Como executar (roteiro de inicialização)](#8-como-executar)
 9. [Endpoints](#9-endpoints)
 10. [Limitações conhecidas e próximos passos](#10-limitações-conhecidas-e-próximos-passos)
 
@@ -349,44 +349,116 @@ classDiagram
 
 ## 8. Como executar
 
-### Opção A: tudo em contêineres
+Roteiro de inicialização, passo a passo.
 
-Pré-requisito: Docker Desktop.
+### 0. Pré-requisitos (só na primeira vez)
+
+- **Docker Desktop** instalado.
+- **JDK 21 ou mais novo** e **IntelliJ IDEA**, se for usar a Opção B.
+- Código do projeto:
+  ```bash
+  git clone https://github.com/acmartins714/3DControl.git
+  ```
+
+### 1. Abra o Docker Desktop
+
+Espere a baleia na bandeja do Windows parar de animar. Para confirmar que ele está pronto:
 
 ```bash
-docker compose up --build
+docker info
 ```
 
-- Gateway: <http://localhost:8080/api/...> (a raiz `http://localhost:8080` responde 404; use `/api/...`)
-- Swagger de cada serviço: `http://localhost:808X/swagger-ui.html` (X = 1 a 5)
-- O PostgreSQL do Docker fica exposto no host na porta **5433**, para não conflitar com um PostgreSQL
-  instalado na máquina (5432). Para mudar: `POSTGRES_HOST_PORT=5434 docker compose up -d`.
+Se aparecer *"error during connect"*, ele ainda está iniciando.
 
-### Opção B: serviços pelo IntelliJ (desenvolvimento)
+### 2. Escolha **uma** das opções (nunca as duas juntas)
 
-> **Não misture as opções A e B.** Se os serviços estiverem no Docker, as portas 8080 a 8085 já estão
-> ocupadas e o IntelliJ falha com *"Port 808X was already in use"*. Antes, rode `docker compose down`.
+> Se os serviços estiverem no Docker, as portas 8080 a 8085 ficam ocupadas e o IntelliJ falha com
+> *"Port 808X was already in use"*. Para trocar de opção, rode antes `docker compose down`.
 
-1. Suba **somente o banco** no Docker:
+**Opção A: tudo no Docker** (para demonstrar ou apresentar)
+
+```bash
+docker compose up -d --build
+```
+
+Na primeira vez leva alguns minutos, por causa do build das imagens. Depois disso, basta
+`docker compose up -d`.
+
+**Opção B: banco no Docker e serviços no IntelliJ** (para desenvolver)
+
+1. Suba **somente o banco**:
    ```bash
    docker compose up -d postgres
    ```
 2. No IntelliJ, no seletor de execução (canto superior direito), escolha **3D Control - todos os
-   serviços** e clique em **Run**. Essa configuração sobe os 6 serviços de uma vez. Na pasta
+   serviços** e clique em **Run ▶**. Essa configuração sobe os 6 serviços de uma vez. Na pasta
    *3D Control* também há uma configuração para cada serviço.
    - As configurações estão versionadas em [`.run/`](.run) e aparecem automaticamente ao abrir o projeto.
    - Nenhuma variável de ambiente é necessária: os valores padrão apontam para `localhost:5433` (o banco
      do Docker) e para os outros serviços em `localhost:808X`.
-3. Para parar, clique em **Stop** no IntelliJ e depois rode `docker compose stop postgres`.
 
-Sem IntelliJ, o equivalente para um serviço é:
+Sem IntelliJ, o equivalente para um serviço é `./mvnw -pl services/cadastro-service spring-boot:run`.
 
-```bash
-./mvnw -pl services/cadastro-service spring-boot:run
-```
+> O PostgreSQL do Docker fica exposto no host na porta **5433**, para não conflitar com um PostgreSQL
+> instalado na máquina (5432). Para usar outra porta: `POSTGRES_HOST_PORT=5434 docker compose up -d`
+> (e `DB_PORT=5434` nos serviços que rodarem fora do Docker).
 
-As conexões aceitam variáveis de ambiente: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` e
-`*_URL` para os serviços integrados (veja `application.yaml` de cada módulo).
+### 3. Aguarde os serviços iniciarem (cerca de 30 segundos)
+
+- **Opção A:** `docker compose ps`. Todos devem aparecer como `Up`.
+- **Opção B:** cada aba de execução do IntelliJ deve mostrar `Started ...Application in X seconds`.
+
+### 4. Confira se está funcionando
+
+Abra no navegador: <http://localhost:8080/api/clientes>. Deve aparecer `[]` (lista vazia) ou uma lista
+de clientes.
+
+> A raiz `http://localhost:8080` responde **404**, e isso é normal: os endereços começam em `/api/...`.
+
+Documentação interativa (Swagger) de cada serviço:
+
+| Serviço | Endereço |
+|---|---|
+| cadastro | <http://localhost:8081/swagger-ui.html> |
+| pedido | <http://localhost:8082/swagger-ui.html> |
+| estoque | <http://localhost:8083/swagger-ui.html> |
+| produção | <http://localhost:8084/swagger-ui.html> |
+| financeiro | <http://localhost:8085/swagger-ui.html> |
+
+### 5. Use o sistema
+
+- **Insomnia:** importe a coleção (veja [Coleção do Insomnia](#coleção-do-insomnia)), selecione o
+  ambiente **Local (api-gateway :8080)** e execute as pastas na ordem **1 → 7**. Confira se a variável
+  `prazo_entrega` é hoje ou uma data futura.
+- **Teste automático do fluxo completo** (opcional): `python scripts/e2e/fluxo_completo.py`. Deve
+  terminar com `TODOS OS PASSOS OK`.
+
+### 6. Para desligar
+
+| Situação | Comando |
+|---|---|
+| Opção A | `docker compose down` |
+| Opção B | **Stop ■** no IntelliJ e depois `docker compose stop postgres` |
+| Zerar o banco e começar do zero | `docker compose down -v` (apaga os dados) |
+
+O Docker Desktop continua aberto depois desses comandos. Para fechá-lo: botão direito no ícone da baleia
+→ **Quit Docker Desktop**.
+
+### Se algo der errado
+
+| Sintoma | Causa | Solução |
+|---|---|---|
+| *"Port 808X was already in use"* no IntelliJ | Os serviços também estão rodando no Docker | `docker compose down`, depois `docker compose up -d postgres` |
+| *"error during connect"* no Docker | O Docker Desktop não terminou de abrir | Aguarde e rode `docker info` de novo |
+| *"Connection refused"* ou erro de banco ao iniciar um serviço | O PostgreSQL não está no ar | `docker compose up -d postgres` |
+| Pedido recusado por prazo | `prazo_entrega` no passado | Atualize a variável no *Base Environment* do Insomnia |
+| Erro 404 no navegador | Endereço sem `/api` | Use `http://localhost:8080/api/...` |
+| *"Cannot resolve symbol"* no IntelliJ | Projeto Maven desatualizado | Aba Maven → **Reload All Maven Projects** |
+
+### Variáveis de ambiente (opcional)
+
+As conexões aceitam `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` e `*_URL` para os serviços
+integrados (veja o `application.yaml` de cada módulo). Os valores padrão já funcionam nas duas opções.
 
 ### Testes
 

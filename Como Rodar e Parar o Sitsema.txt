@@ -1,0 +1,86 @@
+Como levantar o sistema:
+
+São quatro comandos, todos no PowerShell. Rode um de cada vez, na ordem.
+
+1. Entrar na pasta do projeto
+
+cd "D:\UNIESP\4º Período\Backend Avançado\Projeto Final\3DControl"
+
+2. Confirmar que o Docker está pronto. Deve mostrar informações do servidor. Se aparecer "error during connect", espere o Docker Desktop terminar de abrir e rode de novo.
+
+docker info
+
+3. Montar as imagens e subir tudo (banco, 5 serviços e gateway). A primeira vez leva alguns minutos. 
+
+docker compose up -d --build (Só na primeira execução ou se ao encerrar você usar docker compose -v down isso limpa todos os containers)
+docker compose up -d (nas demais execuções)
+
+4. Depois de uns 30 segundos, conferir se tudo subiu. Os 7 contêineres devem aparecer como Up, e o postgres como (healthy).
+
+docker compose ps
+
+Para confirmar que o sistema responde, abra no navegador: http://localhost:8080/api/clientes
+
+Para desligar quando terminar:
+
+docker compose down
+docker compose down -v (se quiser zerar os containers)
+
+Nas próximas vezes, se o código não tiver mudado, o passo 3 pode ser só docker compose up -d, que é bem mais rápido.
+
+Como parar o sistema:
+
+Na pasta do projeto, rode:
+
+docker compose down
+
+Esse comando para e remove os 7 contêineres. Os dados do banco ficam guardados e voltam na próxima vez que você subir o sistema.
+
+Se o terminal estiver em outra pasta, entre antes nela:
+
+cd "D:\UNIESP\4º Período\Backend Avançado\Projeto Final\3DControl"
+
+Outras situações:
+
+Situação	Comando
+Só pausar, para retomar rápido depois com docker compose start	docker compose stop
+Parar e apagar os dados do banco, para começar do zero	docker compose down -v
+
+Depois disso, o Docker Desktop continua aberto. Para fechá-lo também, clique com o botão direito no ícone da baleia, na bandeja do Windows, e escolha Quit Docker Desktop.
+
+Pelo IntelliJ, o banco continua no Docker e os 6 serviços rodam no próprio IntelliJ. As configurações de execução já vêm no projeto (pasta .run/), e conferi que todas apontam para as classes principais que existem na versão nova.
+
+1. Suba só o banco, no PowerShell:
+
+cd "D:\UNIESP\4º Período\Backend Avançado\Projeto Final\3DControl"
+docker compose up -d postgres
+
+2. Abra o projeto no IntelliJ
+
+Vá em File → Open, selecione o pom.xml da pasta 3DControl e clique em Open as Project.
+Se perguntar, escolha Trust Project.
+Espere a importação do Maven terminar; a barra de progresso fica no rodapé.
+
+3. Rode os serviços
+
+No seletor de execução, no canto superior direito, escolha 3D Control - todos os serviços.
+Clique em Run ▶. Abre uma aba para cada serviço.
+Espere cada aba mostrar Started ...Application in X seconds, o que leva uns 30 segundos.
+
+4. Teste: abra http://localhost:8080/api/clientes no navegador ou use o Insomnia.
+
+5. Para parar
+
+Clique em Stop ■ no IntelliJ (ou Ctrl+F2 em cada aba).
+Depois pare o banco:
+docker compose stop postgres
+
+Se der erro no IntelliJ
+
+O código mudou bastante desde a última vez que você abriu o projeto, então o IntelliJ pode estar com a estrutura antiga em cache.
+
+Sintoma	Solução
+"Cannot resolve symbol" ou "Could not find or load main class"	Aba Maven, à direita → Reload All Maven Projects (Ctrl+Shift+A e digite o nome). Use a opção sem "Incrementally"
+Continua falhando depois do Reload	Use a configuração 3D Control - todos os serviços [Maven], que roda pelo Maven e não depende da importação do IntelliJ
+"Port 808X was already in use"	Os serviços também estão no Docker: rode docker compose down e depois docker compose up -d postgres
+Erro de conexão com o banco ao iniciar

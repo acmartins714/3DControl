@@ -84,3 +84,36 @@ Sintoma	Solução
 Continua falhando depois do Reload	Use a configuração 3D Control - todos os serviços [Maven], que roda pelo Maven e não depende da importação do IntelliJ
 "Port 808X was already in use"	Os serviços também estão no Docker: rode docker compose down e depois docker compose up -d postgres
 Erro de conexão com o banco ao iniciar
+
+
+OBSERVAÇÃO IMPORTANTE:
+
+Quando estiver rodando pelo intelliJ só o serviço do postgres-1 deve estar rodando e quando roda sem o intelliJ tem que subir todos os serviços do docker?
+
+Isso mesmo. É sempre um modo ou o outro, nunca os dois ao mesmo tempo.
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Modo	                                No Docker	                Fora do Docker	                        Comando para subir
+------------------------------------------------------------------------------------------------------------------------------------------------
+Pelo IntelliJ (para desenvolver)	Só o postgres	                Os 6 serviços, rodando no IntelliJ	docker compose up -d postgres
+Sem o IntelliJ (para demonstrar)	Os 7: postgres + 6 serviços	Nada	docker compose up -d --build
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+Por que não dá para misturar: os serviços usam portas fixas, de 8080 a 8085. Se um deles já estiver rodando no Docker, o mesmo serviço não consegue subir no IntelliJ, porque a porta está ocupada. Foi isso que gerou o erro "Port 8085 was already in use".
+
+O banco é o mesmo nos dois modos: é sempre o postgres do Docker (porta 5433 no seu computador), com os mesmos dados. O que você cadastrar rodando pelo IntelliJ continua lá quando rodar tudo pelo Docker, e vice-versa.
+
+Para trocar de modo:
+
+- Do IntelliJ para o Docker: clique em Stop ■ no IntelliJ e depois rode:
+  docker compose up -d --build
+
+- Do Docker para o IntelliJ: derrube tudo, suba só o banco e então dê Run ▶ no IntelliJ:
+  docker compose down
+  docker compose up -d postgres
+
+Para conferir o que está rodando no Docker:
+
+docker compose ps
+
+No modo IntelliJ deve aparecer só o postgres. No modo Docker devem aparecer os 7.

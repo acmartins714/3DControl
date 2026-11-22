@@ -363,10 +363,16 @@ Roteiro de inicialização, passo a passo.
 
 - **Docker Desktop** instalado.
 - **JDK 21 ou mais novo** e **IntelliJ IDEA**, se for usar a Opção B.
+- **Python 3**, apenas para os testes ponta a ponta (opcional).
 - Código do projeto:
   ```bash
   git clone https://github.com/acmartins714/3DControl.git
+  cd 3DControl
   ```
+
+> Este repositório é a versão **simplificada** (Controller → Service → Repository). A versão com
+> **Arquitetura Limpa** está em [acmartins714/3DControl-limpa](https://github.com/acmartins714/3DControl-limpa)
+> e se executa da mesma forma.
 
 ### 1. Abra o Docker Desktop
 
@@ -376,12 +382,18 @@ Espere a baleia na bandeja do Windows parar de animar. Para confirmar que ele es
 docker info
 ```
 
-Se aparecer *"error during connect"*, ele ainda está iniciando.
+Se aparecer *"error during connect"*, ele ainda está iniciando. Se o Docker Desktop mostrar a janela
+*"An unexpected error occurred"*, veja [Se algo der errado](#se-algo-der-errado).
 
 ### 2. Escolha **uma** das opções (nunca as duas juntas)
 
 > Se os serviços estiverem no Docker, as portas 8080 a 8085 ficam ocupadas e o IntelliJ falha com
 > *"Port 808X was already in use"*. Para trocar de opção, rode antes `docker compose down`.
+
+> **Tem as duas versões na máquina** (`3DControl` e `3DControl-limpa`)? Os dois `docker-compose.yml` usam o
+> mesmo nome de projeto (`3dcontrol`): os contêineres e o banco são **compartilhados**, e só uma versão roda
+> por vez. Antes de trocar, rode `docker compose down` na pasta da versão que está no ar. O banco
+> (volume `pgdata`) pode continuar: as duas versões usam exatamente as mesmas tabelas.
 
 **Opção A: tudo no Docker** (para demonstrar ou apresentar)
 
@@ -398,7 +410,9 @@ Na primeira vez leva alguns minutos, por causa do build das imagens. Depois diss
    ```bash
    docker compose up -d postgres
    ```
-2. No IntelliJ, no seletor de execução (canto superior direito), escolha **3D Control - todos os
+2. Abra o projeto no IntelliJ: **File → Open**, selecione o `pom.xml` da raiz → **Open as Project**.
+   Espere a importação do Maven terminar (barra de progresso no rodapé).
+3. No seletor de execução (canto superior direito), escolha **3D Control - todos os
    serviços** e clique em **Run ▶**. Essa configuração sobe os 6 serviços de uma vez. Na pasta
    *3D Control* também há uma configuração para cada serviço.
    - As configurações estão versionadas em [`.run/`](.run) e aparecem automaticamente ao abrir o projeto.
@@ -464,6 +478,8 @@ O Docker Desktop continua aberto depois desses comandos. Para fechá-lo: botão 
 |---|---|---|
 | *"Port 808X was already in use"* no IntelliJ | Os serviços também estão rodando no Docker | `docker compose down`, depois `docker compose up -d postgres` |
 | *"error during connect"* no Docker | O Docker Desktop não terminou de abrir | Aguarde e rode `docker info` de novo |
+| Docker Desktop mostra *"An unexpected error occurred"* (o log cita `dockerInference` ou `engine.sock`) | Arquivos de socket que sobraram de um encerramento anterior e que o Windows não consegue apagar | Feche o Docker Desktop (**Quit**), renomeie a pasta citada no erro (`%LOCALAPPDATA%\Docker\run` ou `%LOCALAPPDATA%\docker-secrets-engine`) e abra o Docker de novo. Para apagar a pasta renomeada depois, use o WSL (`rm -rf`) |
+| Serviços da outra versão sobem no lugar desta | As duas versões compartilham o projeto `3dcontrol` do Docker Compose | `docker compose down` na pasta da outra versão e `docker compose up -d --build` nesta |
 | *"Connection refused"* ou erro de banco ao iniciar um serviço | O PostgreSQL não está no ar | `docker compose up -d postgres` |
 | Pedido recusado por prazo | `prazo_entrega` no passado | Atualize a variável no *Base Environment* do Insomnia |
 | Erro 404 no navegador | Endereço sem `/api` | Use `http://localhost:8080/api/...` |
@@ -481,16 +497,16 @@ integrados (veja o `application.yaml` de cada módulo). Os valores padrão já f
 ./mvnw test
 ```
 
-Os testes cobrem as regras de domínio (Regra de Ouro, transições de status, bloqueio de entrega sem
-quitação, reserva de insumos, priorização da fila, pagamentos e lucratividade) **sem depender de banco
-ou de Spring**.
+São 24 testes sobre as regras de negócio das entidades (Regra de Ouro, transições de status, bloqueio de
+entrega sem quitação, reserva de insumos, priorização da fila, pagamentos e lucratividade). Eles criam as
+entidades com `new`, **sem depender de banco ou de Spring**.
 
 ### Testes ponta a ponta (com o ambiente Docker no ar)
 
 Scripts em [`scripts/e2e/`](scripts/e2e). Usam só a biblioteca padrão do Python 3, chamam a API pelo
 gateway e podem ser executados várias vezes, porque cada execução cria dados próprios.
 
-**Fluxo completo do pedido** (35 verificações): falta de insumo → solicitação de compra → reprocessamento
+**Fluxo completo do pedido** (38 verificações): falta de insumo → solicitação de compra → reprocessamento
 → alteração antes da produção → Regra de Ouro → baixa de estoque → entrega bloqueada até a quitação →
 rastreio → lucratividade → erros padronizados.
 

@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="estoque-service (:8083)" type="Application" factoryName="Application" folderName="3D Control">
+    <option name="MAIN_CLASS_NAME" value="br.edu.uniesp.threedcontrol.estoque.EstoqueServiceApplication" />
+    <module name="estoque-service" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

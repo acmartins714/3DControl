@@ -1,0 +1,361 @@
+@startuml diagrama-classes
+!pragma layout smetana
+title 3D Control — Diagrama de Classes (entidades por microsserviço)
+Entidades JPA com as regras de negócio; anotações indicadas nos estereótipos
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #444444
+}
+skinparam package {
+  BorderColor #555555
+}
+hide empty members
+
+' =====================================================================
+package "cadastro-service" as CAD #EEF4FF {
+
+  enum CanalAtendimento {
+    WHATSAPP
+    INSTAGRAM
+    FACEBOOK
+    TELEFONE
+    SITE
+    PRESENCIAL
+  }
+
+  enum UnidadeMedida {
+    UN
+    G
+    KG
+    ML
+    L
+    CM
+    M
+    M2
+  }
+
+  class Cliente <<@Entity>> {
+    - id : UUID
+    - nome : String
+    - documento : String
+    - telefone : String
+    - email : String
+    - canalPreferencial : CanalAtendimento
+    - preferenciasPersonalizacao : String
+    - ativo : boolean
+    + atualizar(...) : void
+    + inativar() : void
+  }
+
+  class Insumo <<@Entity>> {
+    - id : UUID
+    - nome : String
+    - unidadeMedida : UnidadeMedida
+    - custoUnitario : BigDecimal
+    - usoRegular : boolean
+    - ativo : boolean
+    + atualizar(...) : void
+    + inativar() : void
+  }
+
+  class Produto <<@Entity>> {
+    - id : UUID
+    - nome : String
+    - categoria : String
+    - especificacoesTecnicas : String
+    - tempoMedioFabricacaoHoras : int
+    - precoBase : BigDecimal
+    - ativo : boolean
+    + atualizar(...) : void
+    + calcularCustoInsumos(custos : Map) : BigDecimal
+    + inativar() : void
+  }
+
+  class ItemComposicao <<@Embeddable>> {
+    - insumoId : UUID
+    - quantidade : BigDecimal
+  }
+
+  Cliente --> CanalAtendimento
+  Insumo --> UnidadeMedida
+  Produto *-- "0..*" ItemComposicao : ficha técnica
+  ItemComposicao ..> Insumo : insumoId
+}
+
+' =====================================================================
+package "pedido-service" as PED #FFF6E5 {
+
+  enum StatusPedido {
+    EM_TRIAGEM
+    AGUARDANDO_INSUMO
+    EM_PRODUCAO
+    FINALIZADO
+    EM_ROTA_ENTREGA
+    ENTREGUE
+    CANCELADO
+    + permiteAlteracao() : boolean
+    + podeTransitarPara(destino : StatusPedido) : boolean
+  }
+
+  class Pedido <<@Entity>> {
+    - id : UUID
+    - codigo : String
+    - clienteId : UUID
+    - canalOrigem : CanalAtendimento
+    - atendenteResponsavel : String
+    - prazoEntrega : LocalDate
+    - modalidadeEntrega : ModalidadeEntrega
+    - condicaoPagamento : CondicaoPagamento
+    - status : StatusPedido
+    - versao : Long <<@Version>>
+    + garantirAlteravel() : void
+    + alterar(...) : void
+    + atualizarDisponibilidadeInsumos(ok : boolean, detalhe : String) : void
+    + iniciarProducao() : void
+    + finalizarProducao() : void
+    + despachar() : void
+    + confirmarEntrega(quitado : boolean, saldo : BigDecimal) : void
+    + cancelar(motivo : String) : void
+    + valorTotal() : BigDecimal
+  }
+
+  class ItemPedido <<@Embeddable>> {
+    - produtoId : UUID
+    - nomeProduto : String
+    - categoria : String
+    - quantidade : int
+    - precoUnitario : BigDecimal
+    - custoUnitarioEstimado : BigDecimal
+    - personalizacao : String
+    + subtotal() : BigDecimal
+  }
+
+  class HistoricoStatus <<@Embeddable>> {
+    - status : StatusPedido
+    - dataHora : LocalDateTime
+    - observacao : String
+  }
+
+  class PedidoNaoAlteravelException
+
+  Pedido *-- "1..*" ItemPedido
+  Pedido *-- "1..*" HistoricoStatus : rastreio
+  Pedido --> StatusPedido
+  Pedido ..> PedidoNaoAlteravelException : lança
+}
+
+' =====================================================================
+package "estoque-service" as EST #EAF7EA {
+
+  class ItemEstoque <<@Entity>> {
+    - insumoId : UUID
+    - quantidadeDisponivel : BigDecimal
+    - quantidadeReservada : BigDecimal
+    - estoqueMinimo : BigDecimal
+    - versao : Long <<@Version>>
+    + registrarEntrada(q : BigDecimal) : void
+    + saldoLivre() : BigDecimal
+    + reservar(q : BigDecimal) : void
+    + consumirReserva(q : BigDecimal) : void
+    + liberarReserva(q : BigDecimal) : void
+    + abaixoDoMinimo() : boolean
+  }
+
+  class Reserva <<@Entity>> {
+    - pedidoId : UUID
+    - insumoId : UUID
+    - quantidade : BigDecimal
+    - status : Status
+    + consumir() : void
+    + cancelar() : void
+  }
+
+  class MovimentacaoEstoque <<@Entity>> {
+    - insumoId : UUID
+    - tipo : Tipo
+    - quantidade : BigDecimal
+    - pedidoId : UUID
+    - dataHora : LocalDateTime
+  }
+
+  class SolicitacaoCompra <<@Entity>> {
+    - insumoId : UUID
+    - quantidade : BigDecimal
+    - pedidoId : UUID
+    - status : Status
+    + registrarRecebimento() : void
+    + cancelar() : void
+  }
+
+  ItemEstoque "1" -- "0..*" Reserva
+  ItemEstoque "1" -- "0..*" MovimentacaoEstoque
+}
+
+' =====================================================================
+package "producao-service" as PRO #F3ECFA {
+
+  enum Prioridade {
+    URGENTE
+    ALTA
+    NORMAL
+    BAIXA
+  }
+
+  class OrdemProducao <<@Entity>> {
+    - pedidoId : UUID
+    - codigoPedido : String
+    - prazoEntrega : LocalDate
+    - insumosDisponiveis : boolean
+    - status : StatusOrdem
+    - responsavel : String
+    - retrabalhos : int
+    + replanejar(prazo : LocalDate, insumos : boolean) : void
+    + iniciar(responsavel : String) : void
+    + registrarRetrabalho(motivo : String) : void
+    + concluir() : void
+    + prioridade(hoje : LocalDate) : Prioridade
+  }
+
+  OrdemProducao ..> Prioridade
+}
+
+' =====================================================================
+package "financeiro-service" as FIN #FDECEC {
+
+  class ContaReceber <<@Entity>> {
+    - pedidoId : UUID
+    - clienteId : UUID
+    - status : StatusConta
+    + registrarPagamento(valor : BigDecimal, forma : FormaPagamento) : Pagamento
+    + atualizarItens(itens : List) : void
+    + liberadaParaEntrega() : boolean
+    + saldoRemanescente() : BigDecimal
+    + cancelar() : void
+  }
+
+  class ItemConta <<@Embeddable>> {
+    - categoria : String
+    - valorVenda : BigDecimal
+    - custoEstimado : BigDecimal
+  }
+
+  class Pagamento <<@Embeddable>> {
+    - valor : BigDecimal
+    - tipo : TipoPagamento
+    - forma : FormaPagamento
+    - pagoEm : LocalDateTime
+  }
+
+  ContaReceber *-- "1..*" ItemConta
+  ContaReceber *-- "0..*" Pagamento
+}
+
+' =====================================================================
+' Referências entre serviços (somente por identificador — sem FK entre bancos)
+Pedido ..> Cliente : clienteId
+ItemPedido ..> Produto : produtoId
+ItemEstoque ..> Insumo : insumoId
+Reserva ..> Pedido : pedidoId
+SolicitacaoCompra ..> Pedido : pedidoId
+OrdemProducao ..> Pedido : pedidoId
+ContaReceber ..> Pedido : pedidoId
+
+note bottom of Pedido
+  <b>Regra de Ouro</b>: alterar() só é permitido
+  enquanto status.permiteAlteracao()
+  (EM_TRIAGEM ou AGUARDANDO_INSUMO).
+  confirmarEntrega() exige pagamento quitado.
+end note
+
+@enduml
+
+@startuml camadas-pedido-service
+!pragma layout smetana
+title pedido-service — camadas (Controller → Service → Repository / Client) e anotações Spring
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+class PedidoServiceApplication <<@SpringBootApplication>>
+
+package "Controllers" #EEF4FF {
+  class PedidoController <<@RestController>> <<@RequestMapping("/pedidos")>> {
+    + registrar(@Valid @RequestBody NovoPedidoRequest) : PedidoResponse
+    + alterar(@PathVariable UUID, @Valid @RequestBody AlteracaoRequest) : PedidoResponse
+    + confirmarEntrega(@PathVariable UUID) : PedidoResponse
+    + cancelar(@PathVariable UUID, @RequestBody CancelamentoRequest) : PedidoResponse
+  }
+  class RastreioController <<@RestController>> <<@RequestMapping("/rastreio")>> {
+    + rastrear(@PathVariable String) : Rastreio
+  }
+  class GlobalExceptionHandler <<@RestControllerAdvice>> {
+    + naoEncontrado() : ProblemDetail <<404>>
+    + regraDeNegocio() : ProblemDetail <<422>>
+    + concorrencia() : ProblemDetail <<409>>
+    + integracao() : ProblemDetail <<503>>
+  }
+}
+
+package "Services" #FFF6E5 {
+  class PedidoService <<@Service>> <<@Transactional>> {
+    + registrar(NovoPedidoRequest) : PedidoResponse
+    + alterar(UUID, AlteracaoRequest) : PedidoResponse
+    + reprocessarInsumos(UUID) : PedidoResponse
+    + iniciarProducao(UUID) : PedidoResponse
+    + finalizarProducao(UUID) : PedidoResponse
+    + despachar(UUID) : PedidoResponse
+    + confirmarEntrega(UUID) : PedidoResponse
+    + cancelar(UUID, String) : PedidoResponse
+    - compensar(UUID) : void
+  }
+  class RastreioService <<@Service>> <<@Transactional(readOnly = true)>> {
+    + rastrear(String) : Rastreio
+  }
+}
+
+package "Repository e entidades" #EAF7EA {
+  interface PedidoRepository <<Spring Data>> {
+    + findByCodigo(String) : Optional<Pedido>
+    + findByStatusOrderByPrazoEntrega(StatusPedido) : List<Pedido>
+  }
+  class Pedido <<@Entity>> <<@Table("pedido")>> {
+    @Id id : UUID
+    @Version versao : Long
+    @ElementCollection itens : List<ItemPedido>
+    @ElementCollection historico : List<HistoricoStatus>
+  }
+  class ItemPedido <<@Embeddable>>
+  class HistoricoStatus <<@Embeddable>>
+}
+
+package "integracao (RestClient)" #FDECEC {
+  class CadastroClient <<@Component>>
+  class EstoqueClient <<@Component>>
+  class ProducaoClient <<@Component>>
+  class FinanceiroClient <<@Component>>
+}
+
+interface "JpaRepository<Pedido, UUID>" as JpaRepository
+
+PedidoController --> PedidoService
+RastreioController --> RastreioService
+PedidoService --> PedidoRepository
+PedidoService --> CadastroClient
+PedidoService --> EstoqueClient
+PedidoService --> ProducaoClient
+PedidoService --> FinanceiroClient
+RastreioService --> PedidoRepository
+PedidoRepository --|> JpaRepository
+PedidoRepository ..> Pedido
+PedidoService ..> Pedido : cria e altera
+Pedido *-- ItemPedido
+Pedido *-- HistoricoStatus
+
+@enduml

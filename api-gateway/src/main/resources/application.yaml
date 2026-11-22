@@ -1,0 +1,46 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  # Falha rápido quando um serviço dependente cai (evita requisições presas no timeout do SO)
+  http:
+    clients:
+      connect-timeout: 2s
+      read-timeout: 10s
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: cadastros
+              uri: ${CADASTRO_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/clientes/**,/api/produtos/**,/api/insumos/**
+              filters:
+                - StripPrefix=1
+            - id: pedidos
+              uri: ${PEDIDO_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/pedidos/**,/api/rastreio/**
+              filters:
+                - StripPrefix=1
+            - id: estoque
+              uri: ${ESTOQUE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/estoque/**,/api/solicitacoes-compra/**
+              filters:
+                - StripPrefix=1
+            - id: producao
+              uri: ${PRODUCAO_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/producao/**
+              filters:
+                - StripPrefix=1
+            - id: financeiro
+              uri: ${FINANCEIRO_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/financeiro/**
+              filters:
+                - StripPrefix=1

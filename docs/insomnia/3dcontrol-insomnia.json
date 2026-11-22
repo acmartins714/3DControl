@@ -1,0 +1,1216 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_source": "3dcontrol.gerar_colecao",
+  "resources": [
+    {
+      "_id": "wrk_3dcontrol",
+      "_type": "workspace",
+      "name": "3D Control",
+      "description": "API do Sistema de Controle de Vendas 3D Control (via api-gateway).",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_3dcontrol",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080/api",
+        "prazo_entrega": "2026-12-20"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "prazo_entrega"
+        ]
+      },
+      "isPrivate": false
+    },
+    {
+      "_id": "env_gateway",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Local (api-gateway :8080)",
+      "data": {
+        "base_url": "http://localhost:8080/api"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url"
+        ]
+      },
+      "isPrivate": false,
+      "color": "#7d69cb"
+    },
+    {
+      "_id": "fld_cadastros",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "1. Cadastros (cadastro-service)",
+      "description": "",
+      "metaSortKey": 1,
+      "environment": {}
+    },
+    {
+      "_id": "fld_clientes",
+      "_type": "request_group",
+      "parentId": "fld_cadastros",
+      "name": "Clientes",
+      "description": "",
+      "metaSortKey": 2,
+      "environment": {}
+    },
+    {
+      "_id": "req_cliente_criar",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Cadastrar cliente",
+      "description": "O campo opcional \"documento\" (CPF/CNPJ) é único: inclua-o com um valor novo a cada execução.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/clientes",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 3,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Maria Souza\",\n  \"telefone\": \"83999990000\",\n  \"email\": \"maria@example.com\",\n  \"canalPreferencial\": \"WHATSAPP\",\n  \"preferenciasPersonalizacao\": \"Gosta de tons pastel\"\n}"
+      }
+    },
+    {
+      "_id": "req_cliente_listar",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Listar clientes (filtro por nome)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/clientes?nome=maria",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 4,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_cliente_buscar",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Buscar cliente",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/clientes/{% response 'body', 'req_cliente_criar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 5,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_cliente_atualizar",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Atualizar cliente",
+      "description": "",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/clientes/{% response 'body', 'req_cliente_criar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 6,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Maria Souza\",\n  \"telefone\": \"83988887777\",\n  \"email\": \"maria@example.com\",\n  \"canalPreferencial\": \"INSTAGRAM\",\n  \"preferenciasPersonalizacao\": \"Tons pastel; prefere retirada na loja\"\n}"
+      }
+    },
+    {
+      "_id": "req_cliente_inativar",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Inativar cliente",
+      "description": "Inativa o cliente (exclusão lógica). Execute por último: cliente inativo não pode fazer pedidos.",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/clientes/{% response 'body', 'req_cliente_criar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 7,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "fld_insumos",
+      "_type": "request_group",
+      "parentId": "fld_cadastros",
+      "name": "Insumos",
+      "description": "",
+      "metaSortKey": 8,
+      "environment": {}
+    },
+    {
+      "_id": "req_insumo_filamento",
+      "_type": "request",
+      "parentId": "fld_insumos",
+      "name": "Cadastrar insumo — Filamento PLA",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/insumos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 9,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Filamento PLA\",\n  \"descricao\": \"Filamento 1,75 mm\",\n  \"unidadeMedida\": \"KG\",\n  \"custoUnitario\": 120.0,\n  \"usoRegular\": true\n}"
+      }
+    },
+    {
+      "_id": "req_insumo_argola",
+      "_type": "request",
+      "parentId": "fld_insumos",
+      "name": "Cadastrar insumo — Argola (uso não regular)",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/insumos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 10,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Argola metálica\",\n  \"unidadeMedida\": \"UN\",\n  \"custoUnitario\": 0.5,\n  \"usoRegular\": false\n}"
+      }
+    },
+    {
+      "_id": "req_insumo_listar",
+      "_type": "request",
+      "parentId": "fld_insumos",
+      "name": "Listar insumos",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/insumos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 11,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_insumo_buscar",
+      "_type": "request",
+      "parentId": "fld_insumos",
+      "name": "Buscar insumo",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/insumos/{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 12,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_insumo_atualizar",
+      "_type": "request",
+      "parentId": "fld_insumos",
+      "name": "Atualizar insumo",
+      "description": "",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/insumos/{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 13,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Filamento PLA\",\n  \"descricao\": \"Filamento 1,75 mm — fornecedor B\",\n  \"unidadeMedida\": \"KG\",\n  \"custoUnitario\": 115.0,\n  \"usoRegular\": true\n}"
+      }
+    },
+    {
+      "_id": "fld_produtos",
+      "_type": "request_group",
+      "parentId": "fld_cadastros",
+      "name": "Produtos",
+      "description": "",
+      "metaSortKey": 14,
+      "environment": {}
+    },
+    {
+      "_id": "req_produto_criar",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Cadastrar produto com ficha técnica",
+      "description": "Requer os dois insumos cadastrados. A resposta traz o custo estimado calculado pela ficha técnica.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/produtos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 15,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Chaveiro 3D personalizado\",\n  \"descricao\": \"Chaveiro impresso em 3D com nome\",\n  \"categoria\": \"Chaveiros\",\n  \"especificacoesTecnicas\": \"5 cm, PLA, argola metálica\",\n  \"tempoMedioFabricacaoHoras\": 2,\n  \"precoBase\": 15.0,\n  \"composicao\": [\n    {\n      \"insumoId\": \"{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 0.05\n    },\n    {\n      \"insumoId\": \"{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 1\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_produto_listar",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Listar produtos (filtro por categoria)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/produtos?categoria=Chaveiros",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 16,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_produto_buscar",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Buscar produto (com custo estimado)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/produtos/{% response 'body', 'req_produto_criar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 17,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_produto_atualizar",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Atualizar produto",
+      "description": "Mantém o preço base em R$ 15 para que os valores dos exemplos do financeiro fechem (4 x 15 = 60).",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/produtos/{% response 'body', 'req_produto_criar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 18,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Chaveiro 3D personalizado\",\n  \"descricao\": \"Chaveiro impresso em 3D com nome ou logotipo\",\n  \"categoria\": \"Chaveiros\",\n  \"especificacoesTecnicas\": \"5 cm, PLA, argola metálica, acabamento fosco\",\n  \"tempoMedioFabricacaoHoras\": 2,\n  \"precoBase\": 15.0,\n  \"composicao\": [\n    {\n      \"insumoId\": \"{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 0.05\n    },\n    {\n      \"insumoId\": \"{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 1\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "fld_estoque",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "2. Estoque (estoque-service)",
+      "description": "",
+      "metaSortKey": 19,
+      "environment": {}
+    },
+    {
+      "_id": "req_estoque_hab_filamento",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Habilitar estoque — Filamento",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/estoque",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 20,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"insumoId\": \"{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"nomeInsumo\": \"Filamento PLA\",\n  \"unidadeMedida\": \"KG\",\n  \"estoqueMinimo\": 0.5\n}"
+      }
+    },
+    {
+      "_id": "req_estoque_hab_argola",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Habilitar estoque — Argola",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/estoque",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 21,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"insumoId\": \"{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"nomeInsumo\": \"Argola metálica\",\n  \"unidadeMedida\": \"UN\",\n  \"estoqueMinimo\": 0\n}"
+      }
+    },
+    {
+      "_id": "req_estoque_entrada_filamento",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Entrada — 1 kg de filamento",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/estoque/{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}/entradas",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 22,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidade\": 1,\n  \"observacao\": \"Compra NF 123\"\n}"
+      }
+    },
+    {
+      "_id": "req_estoque_entrada_argola",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Entrada — 2 argolas (propositalmente pouco)",
+      "description": "Só 2 argolas: um pedido de 5 chaveiros ficará AGUARDANDO_INSUMO e gerará solicitação de compra.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/estoque/{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}/entradas",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 23,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidade\": 2\n}"
+      }
+    },
+    {
+      "_id": "req_estoque_listar",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Listar saldos",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estoque",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 24,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_estoque_buscar",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Saldo de um insumo",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estoque/{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 25,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_estoque_alertas",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Alertas (abaixo do mínimo)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estoque/alertas",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 26,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_estoque_parametros",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Atualizar estoque mínimo",
+      "description": "",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/estoque/{% response 'body', 'req_insumo_filamento', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 27,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nomeInsumo\": \"Filamento PLA\",\n  \"unidadeMedida\": \"KG\",\n  \"estoqueMinimo\": 0.8\n}"
+      }
+    },
+    {
+      "_id": "req_estoque_movimentacoes",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Movimentações de um insumo (auditoria)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estoque/{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}/movimentacoes",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 28,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "fld_pedidos",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "3. Pedidos (pedido-service)",
+      "description": "Execute após 1 e 2. O prazo usa a variável de ambiente prazo_entrega (deve ser hoje ou futura).",
+      "metaSortKey": 29,
+      "environment": {}
+    },
+    {
+      "_id": "req_pedido_registrar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Registrar pedido (WhatsApp)",
+      "description": "Com só 2 argolas em estoque, o pedido fica AGUARDANDO_INSUMO e abre uma solicitação de compra.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 30,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"clienteId\": \"{% response 'body', 'req_cliente_criar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"canalOrigem\": \"WHATSAPP\",\n  \"atendenteResponsavel\": \"Ana\",\n  \"prazoEntrega\": \"{{ _.prazo_entrega }}\",\n  \"modalidadeEntrega\": \"ENTREGA\",\n  \"condicaoPagamento\": \"SINAL_E_RESTANTE_NA_ENTREGA\",\n  \"observacoes\": \"Entregar à tarde\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{% response 'body', 'req_produto_criar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 5,\n      \"personalizacao\": \"Nome: Maria\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_pedido_site",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Registrar pedido (site — sem atendente)",
+      "description": "Pedidos do site dispensam atendente. precoUnitario é opcional (padrão: preço base do catálogo).",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 31,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"clienteId\": \"{% response 'body', 'req_cliente_criar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"canalOrigem\": \"SITE\",\n  \"prazoEntrega\": \"{{ _.prazo_entrega }}\",\n  \"modalidadeEntrega\": \"RETIRADA\",\n  \"condicaoPagamento\": \"A_VISTA\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{% response 'body', 'req_produto_criar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 1,\n      \"precoUnitario\": 18.0,\n      \"personalizacao\": \"Nome: Ana\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_pedido_listar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Listar pedidos (filtros status/clienteId)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pedidos?status=AGUARDANDO_INSUMO",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 32,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_pedido_buscar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Buscar pedido",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 33,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_pedido_alterar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Alterar pedido (antes da produção)",
+      "description": "Permitido enquanto o pedido está EM_TRIAGEM ou AGUARDANDO_INSUMO. Depois da produção → 422 (Regra de Ouro).",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 34,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"prazoEntrega\": \"{{ _.prazo_entrega }}\",\n  \"modalidadeEntrega\": \"ENTREGA\",\n  \"condicaoPagamento\": \"SINAL_E_RESTANTE_NA_ENTREGA\",\n  \"observacoes\": \"Cliente pediu cor azul\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{% response 'body', 'req_produto_criar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 4,\n      \"personalizacao\": \"Nome: Maria (AZUL)\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_pedido_reprocessar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Reprocessar insumos",
+      "description": "Após receber a compra (pasta 4), tenta reservar novamente → EM_TRIAGEM.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/reprocessamento-insumos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 35,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_pedido_despachar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Despachar (sair para entrega)",
+      "description": "Requer pedido FINALIZADO e modalidade ENTREGA.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/despacho",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 36,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_pedido_entregar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Confirmar entrega",
+      "description": "Responde 422 enquanto houver saldo a receber no financeiro.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/entrega",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 37,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_pedido_cancelar",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "Cancelar pedido",
+      "description": "Só antes da produção. Libera a reserva de estoque, cancela a ordem e a conta a receber.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/cancelamento",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 38,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"motivo\": \"Cliente desistiu\"\n}"
+      }
+    },
+    {
+      "_id": "fld_compras",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "4. Solicitações de compra (estoque-service)",
+      "description": "",
+      "metaSortKey": 39,
+      "environment": {}
+    },
+    {
+      "_id": "req_solicitacoes_pendentes",
+      "_type": "request",
+      "parentId": "fld_compras",
+      "name": "Listar solicitações pendentes do pedido",
+      "description": "Sem o filtro pedidoId, lista as pendentes de todos os pedidos.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/solicitacoes-compra?status=PENDENTE&pedidoId={% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 40,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_solicitacao_receber",
+      "_type": "request",
+      "parentId": "fld_compras",
+      "name": "Registrar recebimento",
+      "description": "Usa a 1ª solicitação da listagem anterior. Dá entrada no estoque. Depois rode 'Reprocessar insumos' (pasta 3).",
+      "method": "POST",
+      "url": "{{ _.base_url }}/solicitacoes-compra/{% response 'body', 'req_solicitacoes_pendentes', 'b64::JFswXS5pZA==::46b', 'never', 60 %}/recebimento",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 41,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidadeRecebida\": 10\n}"
+      }
+    },
+    {
+      "_id": "req_solicitacao_cancelar",
+      "_type": "request",
+      "parentId": "fld_compras",
+      "name": "Cancelar solicitação",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/solicitacoes-compra/{% response 'body', 'req_solicitacoes_pendentes', 'b64::JFswXS5pZA==::46b', 'never', 60 %}/cancelamento",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 42,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "fld_producao",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "5. Produção (producao-service)",
+      "description": "As ações usam a ordem do pedido registrado na pasta 3 (requisição 'Ordem do pedido').",
+      "metaSortKey": 43,
+      "environment": {}
+    },
+    {
+      "_id": "req_producao_fila",
+      "_type": "request",
+      "parentId": "fld_producao",
+      "name": "Fila de produção (priorizada)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/producao/fila",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 44,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_producao_ordem_pedido",
+      "_type": "request",
+      "parentId": "fld_producao",
+      "name": "Ordem do pedido",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/producao/ordens/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 45,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_producao_buscar",
+      "_type": "request",
+      "parentId": "fld_producao",
+      "name": "Buscar ordem por id",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/producao/ordens/{% response 'body', 'req_producao_ordem_pedido', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 46,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_producao_iniciar",
+      "_type": "request",
+      "parentId": "fld_producao",
+      "name": "Iniciar produção",
+      "description": "Pedido vai para EM_PRODUCAO (bloqueado para alterações) e os insumos têm baixa no estoque.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/producao/ordens/{% response 'body', 'req_producao_ordem_pedido', 'b64::JC5pZA==::46b', 'never', 60 %}/inicio",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 47,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"responsavel\": \"Carlos\"\n}"
+      }
+    },
+    {
+      "_id": "req_producao_retrabalho",
+      "_type": "request",
+      "parentId": "fld_producao",
+      "name": "Registrar retrabalho",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/producao/ordens/{% response 'body', 'req_producao_ordem_pedido', 'b64::JC5pZA==::46b', 'never', 60 %}/retrabalhos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 48,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"motivo\": \"Falha na impressão da letra M\"\n}"
+      }
+    },
+    {
+      "_id": "req_producao_concluir",
+      "_type": "request",
+      "parentId": "fld_producao",
+      "name": "Concluir produção",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/producao/ordens/{% response 'body', 'req_producao_ordem_pedido', 'b64::JC5pZA==::46b', 'never', 60 %}/conclusao",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 49,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "fld_financeiro",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "6. Financeiro (financeiro-service)",
+      "description": "",
+      "metaSortKey": 50,
+      "environment": {}
+    },
+    {
+      "_id": "req_fin_contas",
+      "_type": "request",
+      "parentId": "fld_financeiro",
+      "name": "Listar contas a receber",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/financeiro/contas",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 51,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_fin_conta_pedido",
+      "_type": "request",
+      "parentId": "fld_financeiro",
+      "name": "Conta do pedido",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/financeiro/contas/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 52,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_fin_situacao",
+      "_type": "request",
+      "parentId": "fld_financeiro",
+      "name": "Situação financeira do pedido",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/financeiro/contas/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/situacao",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 53,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_fin_sinal",
+      "_type": "request",
+      "parentId": "fld_financeiro",
+      "name": "Registrar sinal (R$ 20 — PIX)",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/financeiro/contas/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/pagamentos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 54,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"valor\": 20.0,\n  \"forma\": \"PIX\",\n  \"observacao\": \"Sinal\"\n}"
+      }
+    },
+    {
+      "_id": "req_fin_quitacao",
+      "_type": "request",
+      "parentId": "fld_financeiro",
+      "name": "Registrar quitação (R$ 40 — dinheiro)",
+      "description": "Valor do pedido alterado (4 x 15 = 60) menos o sinal. Valores acima do saldo → 422.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/financeiro/contas/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/pagamentos",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 55,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"valor\": 40.0,\n  \"forma\": \"DINHEIRO\"\n}"
+      }
+    },
+    {
+      "_id": "req_fin_lucratividade",
+      "_type": "request",
+      "parentId": "fld_financeiro",
+      "name": "Lucratividade por categoria",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/financeiro/lucratividade?inicio=2026-01-01&fim=2026-12-31",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 56,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "fld_rastreio",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "7. Rastreio (atendimento / site / WhatsApp)",
+      "description": "",
+      "metaSortKey": 57,
+      "environment": {}
+    },
+    {
+      "_id": "req_rastreio",
+      "_type": "request",
+      "parentId": "fld_rastreio",
+      "name": "Rastrear pedido pelo código",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/rastreio/{% response 'body', 'req_pedido_registrar', 'b64::JC5jb2RpZ28=::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 58,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "fld_interno",
+      "_type": "request_group",
+      "parentId": "wrk_3dcontrol",
+      "name": "8. Integração interna (chamadas entre serviços)",
+      "description": "Endpoints usados pelos próprios microsserviços. Úteis para depuração; no fluxo normal não precisam ser chamados à mão.",
+      "metaSortKey": 59,
+      "environment": {}
+    },
+    {
+      "_id": "req_int_reservar",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "estoque ← pedido: reservar insumos",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/estoque/reservas",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 60,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"itens\": [\n    {\n      \"insumoId\": \"{% response 'body', 'req_insumo_argola', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n      \"quantidade\": 1\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_int_consumir",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "estoque ← pedido: consumir reservas",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/estoque/reservas/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/consumo",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 61,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_int_liberar",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "estoque ← pedido: liberar reservas",
+      "description": "",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/estoque/reservas/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 62,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_int_planejar",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "produção ← pedido: planejar ordem",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/producao/ordens",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 63,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"codigoPedido\": \"{% response 'body', 'req_pedido_registrar', 'b64::JC5jb2RpZ28=::46b', 'never', 60 %}\",\n  \"prazoEntrega\": \"{{ _.prazo_entrega }}\",\n  \"insumosDisponiveis\": true\n}"
+      }
+    },
+    {
+      "_id": "req_int_cancelar_ordem",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "produção ← pedido: cancelar ordem",
+      "description": "",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/producao/ordens/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 64,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_int_inicio",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "pedido ← produção: início da produção",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/inicio-producao",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 65,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_int_conclusao",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "pedido ← produção: conclusão da produção",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/conclusao-producao",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 66,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    },
+    {
+      "_id": "req_int_abrir_conta",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "financeiro ← pedido: abrir conta",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/financeiro/contas",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 67,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"clienteId\": \"{% response 'body', 'req_cliente_criar', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"itens\": [\n    {\n      \"categoria\": \"Chaveiros\",\n      \"valorVenda\": 60.0,\n      \"custoEstimado\": 26.0\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_int_itens_conta",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "financeiro ← pedido: atualizar itens da conta",
+      "description": "",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/financeiro/contas/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}/itens",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 68,
+      "settingFollowRedirects": "global",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"itens\": [\n    {\n      \"categoria\": \"Chaveiros\",\n      \"valorVenda\": 60.0,\n      \"custoEstimado\": 26.0\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_int_cancelar_conta",
+      "_type": "request",
+      "parentId": "fld_interno",
+      "name": "financeiro ← pedido: cancelar conta",
+      "description": "",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/financeiro/contas/pedido/{% response 'body', 'req_pedido_registrar', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 69,
+      "settingFollowRedirects": "global",
+      "headers": [],
+      "body": {}
+    }
+  ]
+}

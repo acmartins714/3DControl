@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="producao-service (:8084)" type="Application" factoryName="Application" folderName="3D Control">
+    <option name="MAIN_CLASS_NAME" value="br.edu.uniesp.threedcontrol.producao.ProducaoServiceApplication" />
+    <module name="producao-service" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

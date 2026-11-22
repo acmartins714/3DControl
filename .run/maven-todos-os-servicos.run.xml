@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="3D Control - todos os serviços [Maven]" type="CompoundRunConfigurationType" folderName="3D Control (Maven)">
+    <toRun name="cadastro-service (:8081) [Maven]" type="MavenRunConfiguration" />
+    <toRun name="pedido-service (:8082) [Maven]" type="MavenRunConfiguration" />
+    <toRun name="estoque-service (:8083) [Maven]" type="MavenRunConfiguration" />
+    <toRun name="producao-service (:8084) [Maven]" type="MavenRunConfiguration" />
+    <toRun name="financeiro-service (:8085) [Maven]" type="MavenRunConfiguration" />
+    <toRun name="api-gateway (:8080) [Maven]" type="MavenRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>
